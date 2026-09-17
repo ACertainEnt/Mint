@@ -1,0 +1,6 @@
+{
+  "name": "MINT — Solana NFT Marketplace",
+  "description": "Production-grade, mobile-first Web3 NFT platform on Solana featuring instant discovery, collection launches, verified creators, live auctions, bounties, and portfolio management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
