@@ -4,7 +4,6 @@ import { WalletProvider, useWallet } from './context/WalletContext';
 import { Header } from './components/Header';
 import { MobileNavbar } from './components/MobileNavbar';
 import { AuthModal } from './components/AuthModal';
-import { OnboardingModal } from './components/OnboardingModal';
 import { SearchModal } from './components/SearchModal';
 import { NotificationsDrawer } from './components/NotificationsDrawer';
 import { TransactionModal } from './components/TransactionModal';
@@ -90,50 +89,63 @@ const AppContent: React.FC = () => {
 
   // Route Dispatcher
   const handleNavigate = (path: string) => {
-    if (path.startsWith('nft/')) {
-      const id = path.replace('nft/', '');
-      setCurrentRoute(path);
+    if (!path) return;
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+
+    if (cleanPath.startsWith('nft/')) {
+      setCurrentRoute(cleanPath);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    if (path.startsWith('collection/')) {
-      const id = path.replace('collection/', '');
-      setCurrentRoute(path);
+    if (cleanPath.startsWith('collection/')) {
+      setCurrentRoute(cleanPath);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    if (path.startsWith('user/')) {
-      const username = path.replace('user/', '');
-      setSelectedCreatorUsername(username);
-      setCurrentRoute(path);
-      return;
-    }
-    if (path.startsWith('creator/')) {
-      const username = path.replace('creator/', '');
+    if (cleanPath.startsWith('user/')) {
+      const username = cleanPath.replace('user/', '').replace(/^@/, '');
       setSelectedCreatorUsername(username);
       setCurrentRoute(`user/${username}`);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    if (path.startsWith('auctions/')) {
+    if (cleanPath.startsWith('creator/')) {
+      const username = cleanPath.replace('creator/', '').replace(/^@/, '');
+      setSelectedCreatorUsername(username);
+      setCurrentRoute(`user/${username}`);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (cleanPath.startsWith('profile/')) {
+      const username = cleanPath.replace('profile/', '').replace(/^@/, '');
+      setSelectedCreatorUsername(username);
+      setCurrentRoute(`user/${username}`);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (cleanPath.startsWith('auctions/')) {
       setCurrentRoute('auctions');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    if (path.startsWith('mintbot')) {
-      if (path.includes('?q=')) {
-        const q = decodeURIComponent(path.split('?q=')[1]);
+    if (cleanPath.startsWith('mintbot')) {
+      if (cleanPath.includes('?q=')) {
+        const q = decodeURIComponent(cleanPath.split('?q=')[1]);
         setMintBotInitialQuery(q);
-      } else if (path.includes(':')) {
-        const q = path.split(':')[1];
+      } else if (cleanPath.includes(':')) {
+        const q = cleanPath.split(':')[1];
         setMintBotInitialQuery(q);
       }
       setCurrentRoute('mintbot');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    if (path === 'marketplace') {
+    if (cleanPath === 'marketplace') {
       setCurrentRoute('explore');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    setCurrentRoute(path);
+    setCurrentRoute(cleanPath);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -321,25 +333,10 @@ const AppContent: React.FC = () => {
         onClose={() => setShowAuthModal(false)}
       />
 
-      <OnboardingModal
-        isOpen={needsOnboarding}
-      />
-
       <SearchModal
         isOpen={showSearchModal}
         onClose={() => setShowSearchModal(false)}
-        onSelectNft={(nft) => {
-          setSelectedNft(nft);
-          handleNavigate(`nft/${nft.id}`);
-        }}
-        onSelectCollection={(col) => {
-          setSelectedCollection(col);
-          handleNavigate(`collection/${col.id}`);
-        }}
-        onSelectUser={(u) => {
-          setSelectedCreatorUsername(u.username);
-          handleNavigate(`user/${u.username}`);
-        }}
+        onNavigate={handleNavigate}
       />
 
       <NotificationsDrawer

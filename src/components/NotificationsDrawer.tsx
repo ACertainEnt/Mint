@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Check, Bell, Gavel, DollarSign, Award, ArrowUpRight, Heart, UserPlus } from 'lucide-react';
+import { X, Check, Bell, Gavel, DollarSign, Award, ArrowUpRight, Heart, UserPlus, MessageSquare, MessageCircle } from 'lucide-react';
 import { Notification } from '../types';
 
 interface NotificationsDrawerProps {
@@ -25,6 +25,10 @@ export const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
     switch (type) {
       case 'like':
         return <Heart size={14} className="text-[#ff5500] fill-[#ff5500]" />;
+      case 'comment':
+        return <MessageSquare size={14} className="text-[#ff5500]" />;
+      case 'reply':
+        return <MessageCircle size={14} className="text-[#ff5500]" />;
       case 'follow':
         return <UserPlus size={14} className="text-[#ff5500]" />;
       case 'bid':

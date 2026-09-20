@@ -86,9 +86,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (active) {
             setUser(active.user);
-            if (!active.user.profileCompleted) {
-              setShowOnboardingModal(true);
-            }
           } else {
             clearStoredToken();
             setUser(null);
@@ -117,9 +114,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const updated = [initialAcc];
           setAccounts(updated);
           saveAccounts(updated);
-          if (!res.user.profileCompleted) {
-            setShowOnboardingModal(true);
-          }
         })
         .catch(() => {
           clearStoredToken();
@@ -151,39 +145,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setShowAuthModal(false);
     setIsAddingAccount(false);
+    setShowOnboardingModal(false);
     window.dispatchEvent(new CustomEvent('mint:account-switched', { detail: { user: newUser } }));
   };
 
   const loginWithEmail = async (email: string, pass: string) => {
     const res = await api.login({ email, password: pass });
     registerSession(res.token, res.user);
-    if (!res.user.profileCompleted) {
-      setShowOnboardingModal(true);
-    }
   };
 
   const registerWithEmail = async (email: string, pass: string, username?: string, displayName?: string) => {
     const res = await api.register({ email, password: pass, username, displayName });
     registerSession(res.token, res.user);
-    if (!res.user.profileCompleted) {
-      setShowOnboardingModal(true);
-    }
   };
 
   const loginWithProvider = async (provider: string, email?: string, displayName?: string, avatar?: string) => {
     const res = await api.providerLogin({ provider, email, displayName, avatar });
     registerSession(res.token, res.user);
-    if (res.isNewUser || !res.user.profileCompleted) {
-      setShowOnboardingModal(true);
-    }
   };
 
   const loginWithWallet = async (walletAddress: string) => {
     const res = await api.walletLogin(walletAddress);
     registerSession(res.token, res.user);
-    if (res.isNewUser || !res.user.profileCompleted) {
-      setShowOnboardingModal(true);
-    }
   };
 
   const completeProfile = async (username: string, displayName?: string, avatar?: string, bio?: string) => {

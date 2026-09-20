@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, Bell, Wallet, User as UserIcon, LogOut, Shield, ChevronDown, Check, Coins, ExternalLink, Bot } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import { VerifiedBadge } from './VerifiedBadge';
+import { ProviderBadge } from './ProviderBadge';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
 
@@ -208,12 +209,18 @@ export const Header: React.FC<HeaderProps> = ({
             {user ? (
               <button
                 onClick={() => setProfileDropdown(!profileDropdown)}
-                className="flex items-center gap-1 p-1 rounded-full hover:ring-2 hover:ring-[#ff5500]/50 transition-all"
+                className="relative flex items-center justify-center p-0.5 rounded-full hover:ring-2 hover:ring-[#ff5500]/60 transition-all focus:outline-none cursor-pointer"
+                aria-label="Account menu"
               >
                 <img
                   src={user.avatar}
                   alt={user.displayName}
                   className="w-8 h-8 rounded-full object-cover border border-[#262c3c]"
+                />
+                <ProviderBadge
+                  provider={user.authProvider || (user.email ? 'google' : 'wallet')}
+                  size="xs"
+                  className="absolute -bottom-0.5 -right-0.5"
                 />
               </button>
             ) : (
@@ -229,14 +236,12 @@ export const Header: React.FC<HeaderProps> = ({
             {profileDropdown && user && (
               <div className="absolute right-0 mt-2 w-56 bg-[#11141a] border border-[#232938] rounded-xl p-2 shadow-2xl z-50 text-left animate-fade-in">
                 <div className="p-2 border-b border-[#1c212d]">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-white truncate">
-                      {user.displayName}
-                    </span>
+                  <span className="text-xs font-bold text-white truncate block">
+                    {user.displayName}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-[11px] font-mono-code text-[#ff5500]">
+                    <span>@{user.username}</span>
                     {user.isVerified && <VerifiedBadge size="sm" />}
-                  </div>
-                  <div className="text-[11px] font-mono-code text-[#ff5500]">
-                    @{user.username}
                   </div>
                 </div>
 

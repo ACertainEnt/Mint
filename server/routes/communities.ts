@@ -1,22 +1,85 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { AuthenticatedRequest, requireAuth } from '../middleware/auth';
-import { Community, CommunityMember, CommunityPost, VerificationRequest } from '../../src/types';
+import { Community, CommunityMember, VerificationRequest } from '../../src/types';
 
 export const communitiesRouter = Router();
+
+// Helper to check if user has platform owner or admin privileges
+function isPlatformOwnerOrAdmin(user?: { role?: string; email?: string }): boolean {
+  if (!user) return false;
+  return user.role === 'owner' || user.role === 'admin' || user.email === 'pervercy23@gmail.com';
+}
 
 // Helper to enrich community with current user's membership status
 function enrichCommunity(community: Community, userId?: string, members: CommunityMember[] = []): Community {
   if (!userId) {
-    return { ...community, isJoined: false, userRoleInCommunity: null };
+    return { ...community, isJoined: false, userRoleInCommunity: null, allowMemberPosts: community.allowMemberPosts ?? true };
   }
   const membership = members.find(m => m.communityId === community.id && m.userId === userId);
   return {
     ...community,
+    allowMemberPosts: community.allowMemberPosts ?? true,
     isJoined: !!membership || community.creatorId === userId,
     userRoleInCommunity: membership ? membership.communityRole : (community.creatorId === userId ? 'owner' : null)
   };
 }
+
+// GET /api/communities/creation-status - Authoritative community creation cooldown status
+communitiesRouter.get('/creation-status', requireAuth, (req: AuthenticatedRequest, res) => {
+  const user = req.user!;
+  const database = db.get();
+
+  if (isPlatformOwnerOrAdmin(user)) {
+    return res.json({
+      canCreate: true,
+      isOwnerExempt: true,
+      remainingSeconds: 0,
+      cooldownEndsAt: null,
+      cooldownHours: database.config?.communityCreationCooldownHours || 10
+    });
+  }
+
+  const userCommunities = (database.communities || [])
+    .filter(c => c.creatorId === user.id)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const lastCreated = userCommunities[0];
+  const cooldownHours = database.config?.communityCreationCooldownHours || 10;
+  const cooldownMs = cooldownHours * 60 * 60 * 1000;
+
+  if (!lastCreated) {
+    return res.json({
+      canCreate: true,
+      isOwnerExempt: false,
+      remainingSeconds: 0,
+      cooldownEndsAt: null,
+      cooldownHours
+    });
+  }
+
+  const timeSince = Date.now() - new Date(lastCreated.createdAt).getTime();
+  if (timeSince >= cooldownMs) {
+    return res.json({
+      canCreate: true,
+      isOwnerExempt: false,
+      remainingSeconds: 0,
+      cooldownEndsAt: null,
+      cooldownHours
+    });
+  }
+
+  const remainingMs = cooldownMs - timeSince;
+  const cooldownEndsAt = new Date(Date.now() + remainingMs).toISOString();
+
+  return res.json({
+    canCreate: false,
+    isOwnerExempt: false,
+    remainingSeconds: Math.ceil(remainingMs / 1000),
+    cooldownEndsAt,
+    cooldownHours
+  });
+});
 
 // GET /api/communities - List communities
 communitiesRouter.get('/', (req: AuthenticatedRequest, res) => {
@@ -29,43 +92,67 @@ communitiesRouter.get('/', (req: AuthenticatedRequest, res) => {
   res.json({ communities: enriched });
 });
 
-// GET /api/communities/:id - Get community by ID or slug
-communitiesRouter.get('/:id', (req: AuthenticatedRequest, res) => {
-  const database = db.get();
-  const idOrSlug = req.params.id.toLowerCase();
-  const community = (database.communities || []).find(
-    c => c.id === req.params.id || c.slug.toLowerCase() === idOrSlug
-  );
-  if (!community) {
-    return res.status(404).json({ error: 'Community not found' });
-  }
-
-  const members = database.communityMembers || [];
-  const enriched = enrichCommunity(community, req.user?.id, members);
-  res.json({ community: enriched });
-});
-
 // POST /api/communities - Create a community
 communitiesRouter.post('/', requireAuth, (req: AuthenticatedRequest, res) => {
-  const { name, description, avatar, banner, category, collectionId, socialLinks } = req.body;
+  const { name, handle, description, avatar, banner, category, collectionId, socialLinks, allowMemberPosts, postPermissionMode, postCooldownSeconds, joiningMode, aboutAnimation } = req.body;
   const user = req.user!;
+  const database = db.get();
 
   if (!name || typeof name !== 'string' || !name.trim()) {
     return res.status(400).json({ error: 'Community name is required' });
   }
 
+  // Authoritative Cooldown check for normal users (Platform owner is exempt)
+  if (!isPlatformOwnerOrAdmin(user)) {
+    const userCommunities = (database.communities || [])
+      .filter(c => c.creatorId === user.id)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    const lastCreated = userCommunities[0];
+    if (lastCreated) {
+      const cooldownHours = database.config?.communityCreationCooldownHours || 10;
+      const cooldownMs = cooldownHours * 60 * 60 * 1000;
+      const timeSince = Date.now() - new Date(lastCreated.createdAt).getTime();
+
+      if (timeSince < cooldownMs) {
+        const remainingMs = cooldownMs - timeSince;
+        const remainingHours = Math.floor(remainingMs / (60 * 60 * 1000));
+        const remainingMinutes = Math.ceil((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+        return res.status(429).json({
+          error: `Community creation cooldown active. You can create another community in ${remainingHours > 0 ? `${remainingHours}h ` : ''}${remainingMinutes}m.`
+        });
+      }
+    }
+  }
+
   const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const database = db.get();
+  const cleanHandle = handle ? `@${handle.replace(/^@+/, '').toLowerCase().replace(/[^a-z0-9_]+/g, '')}` : `@${slug.replace(/-/g, '_')}`;
+
   if (!Array.isArray(database.communities)) database.communities = [];
   if (!Array.isArray(database.communityMembers)) database.communityMembers = [];
 
-  if (database.communities.some(c => c.slug === slug)) {
-    return res.status(400).json({ error: 'A community with this name/slug already exists' });
+  if (database.communities.some(c => c.slug === slug || (c.handle && c.handle.toLowerCase() === cleanHandle.toLowerCase()))) {
+    return res.status(400).json({ error: 'A community with this name or @handle already exists' });
   }
+
+  const defaultSpaces = [
+    {
+      id: `sp_${Date.now()}_gen`,
+      communityId: '',
+      name: 'General',
+      slug: 'general',
+      description: 'General community conversations and updates',
+      icon: 'layers',
+      isDefault: true,
+      order: 1,
+      createdAt: new Date().toISOString()
+    }
+  ];
 
   const newCommunity: Community = {
     id: `com_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     name: name.trim(),
+    handle: cleanHandle,
     slug,
     description: (description || '').trim(),
     avatar: avatar || user.avatar || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=240&auto=format&fit=crop&q=80',
@@ -77,11 +164,21 @@ communitiesRouter.post('/', requireAuth, (req: AuthenticatedRequest, res) => {
     isVerified: false,
     category: category || 'Art',
     collectionId: collectionId || undefined,
+    allowMemberPosts: allowMemberPosts !== undefined ? !!allowMemberPosts : true,
+    postPermissionMode: postPermissionMode || 'everyone',
+    postCooldownSeconds: postCooldownSeconds ?? 0,
+    joiningMode: joiningMode || 'open',
+    aboutAnimation: aboutAnimation || 'none',
+    rules: ['Be respectful to fellow members', 'No spam or unauthorized promotional links', 'Keep conversations constructive'],
+    spaces: defaultSpaces,
+    roles: [],
     socialLinks: socialLinks || undefined,
     createdAt: new Date().toISOString()
   };
 
-  // Add owner to community members
+  newCommunity.spaces![0].communityId = newCommunity.id;
+
+  // Add creator as owner member
   const ownerMember: CommunityMember = {
     id: `cm_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     communityId: newCommunity.id,
@@ -95,6 +192,7 @@ communitiesRouter.post('/', requireAuth, (req: AuthenticatedRequest, res) => {
       role: user.role
     },
     communityRole: 'owner',
+    assignedRoleIds: [],
     joinedAt: new Date().toISOString()
   };
 
@@ -108,63 +206,6 @@ communitiesRouter.post('/', requireAuth, (req: AuthenticatedRequest, res) => {
       isJoined: true,
       userRoleInCommunity: 'owner'
     }
-  });
-});
-
-// PUT /api/communities/:id - Update community settings
-communitiesRouter.put('/:id', requireAuth, (req: AuthenticatedRequest, res) => {
-  const user = req.user!;
-  const database = db.get();
-  const community = (database.communities || []).find(c => c.id === req.params.id);
-
-  if (!community) {
-    return res.status(404).json({ error: 'Community not found' });
-  }
-
-  // Only community creator or platform admin can edit settings
-  if (community.creatorId !== user.id && user.role !== 'admin') {
-    return res.status(403).json({ error: 'Only the community owner can update settings' });
-  }
-
-  const { name, description, avatar, banner, category, socialLinks, rules } = req.body;
-
-  if (name !== undefined) {
-    if (typeof name !== 'string' || !name.trim()) {
-      return res.status(400).json({ error: 'Community name cannot be empty' });
-    }
-    community.name = name.trim();
-  }
-
-  if (description !== undefined) {
-    community.description = (description || '').trim();
-  }
-
-  if (avatar !== undefined) {
-    community.avatar = avatar;
-  }
-
-  if (banner !== undefined) {
-    community.banner = banner;
-  }
-
-  if (category !== undefined) {
-    community.category = category;
-  }
-
-  if (socialLinks !== undefined) {
-    community.socialLinks = socialLinks;
-  }
-
-  if (rules !== undefined && Array.isArray(rules)) {
-    community.rules = rules.filter(r => typeof r === 'string' && r.trim());
-  }
-
-  db.save(database);
-
-  const members = database.communityMembers || [];
-  res.json({
-    community: enrichCommunity(community, user.id, members),
-    success: true
   });
 });
 
@@ -225,6 +266,79 @@ communitiesRouter.get('/:id/members', (req: AuthenticatedRequest, res) => {
   res.json({ members: enrichedMembers });
 });
 
+// PUT /api/communities/:id/members/:userId/role - Update community member role
+communitiesRouter.put('/:id/members/:userId/role', requireAuth, (req: AuthenticatedRequest, res) => {
+  const user = req.user!;
+  const database = db.get();
+  const community = (database.communities || []).find(c => c.id === req.params.id);
+
+  if (!community) {
+    return res.status(404).json({ error: 'Community not found' });
+  }
+
+  if (community.creatorId !== user.id && !isPlatformOwnerOrAdmin(user)) {
+    return res.status(403).json({ error: 'Only the community owner can update member roles' });
+  }
+
+  const { role } = req.body;
+  if (!['moderator', 'member'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role. Must be "moderator" or "member"' });
+  }
+
+  const targetMember = (database.communityMembers || []).find(
+    m => m.communityId === community.id && m.userId === req.params.userId
+  );
+
+  if (!targetMember) {
+    return res.status(404).json({ error: 'Member not found in this community' });
+  }
+
+  if (targetMember.userId === community.creatorId) {
+    return res.status(400).json({ error: 'Cannot change the role of the community owner' });
+  }
+
+  targetMember.communityRole = role;
+  db.save(database);
+
+  res.json({ member: targetMember, success: true });
+});
+
+// DELETE /api/communities/:id/members/:userId - Remove member from community
+communitiesRouter.delete('/:id/members/:userId', requireAuth, (req: AuthenticatedRequest, res) => {
+  const user = req.user!;
+  const database = db.get();
+  const community = (database.communities || []).find(c => c.id === req.params.id);
+
+  if (!community) {
+    return res.status(404).json({ error: 'Community not found' });
+  }
+
+  const isOwner = community.creatorId === user.id;
+  const isPlatformStaff = isPlatformOwnerOrAdmin(user);
+  const currentMember = (database.communityMembers || []).find(m => m.communityId === community.id && m.userId === user.id);
+  const isMod = currentMember?.communityRole === 'moderator';
+
+  if (!isOwner && !isPlatformStaff && !isMod) {
+    return res.status(403).json({ error: 'Only community leaders can remove members' });
+  }
+
+  if (req.params.userId === community.creatorId) {
+    return res.status(400).json({ error: 'Cannot remove the community owner' });
+  }
+
+  const memberIdx = (database.communityMembers || []).findIndex(
+    m => m.communityId === community.id && m.userId === req.params.userId
+  );
+
+  if (memberIdx !== -1) {
+    database.communityMembers.splice(memberIdx, 1);
+    community.memberCount = Math.max(1, (community.memberCount || 1) - 1);
+    db.save(database);
+  }
+
+  res.json({ success: true });
+});
+
 // POST /api/communities/:id/join - Join a community
 communitiesRouter.post('/:id/join', requireAuth, (req: AuthenticatedRequest, res) => {
   const user = req.user!;
@@ -254,18 +368,15 @@ communitiesRouter.post('/:id/join', requireAuth, (req: AuthenticatedRequest, res
         isVerified: !!user.isVerified,
         role: user.role
       },
-      communityRole: community.creatorId === user.id ? 'owner' : 'member',
+      communityRole: 'member',
       joinedAt: new Date().toISOString()
     };
     database.communityMembers.push(newMember);
-    community.memberCount = database.communityMembers.filter(m => m.communityId === community.id).length;
+    community.memberCount = (community.memberCount || 0) + 1;
     db.save(database);
   }
 
-  res.json({
-    success: true,
-    community: enrichCommunity(community, user.id, database.communityMembers)
-  });
+  res.json({ success: true, isJoined: true, memberCount: community.memberCount });
 });
 
 // POST /api/communities/:id/leave - Leave a community
@@ -279,100 +390,26 @@ communitiesRouter.post('/:id/leave', requireAuth, (req: AuthenticatedRequest, re
   }
 
   if (community.creatorId === user.id) {
-    return res.status(400).json({ error: 'Community owner cannot leave their own community' });
+    return res.status(400).json({ error: 'The community creator cannot leave the community. You may delete it from settings if desired.' });
   }
 
   if (!Array.isArray(database.communityMembers)) database.communityMembers = [];
 
-  database.communityMembers = database.communityMembers.filter(
-    m => !(m.communityId === community.id && m.userId === user.id)
+  const memberIdx = database.communityMembers.findIndex(
+    m => m.communityId === community.id && m.userId === user.id
   );
 
-  community.memberCount = database.communityMembers.filter(m => m.communityId === community.id).length;
-  db.save(database);
+  if (memberIdx !== -1) {
+    database.communityMembers.splice(memberIdx, 1);
+    community.memberCount = Math.max(1, (community.memberCount || 1) - 1);
+    db.save(database);
+  }
 
-  res.json({
-    success: true,
-    community: enrichCommunity(community, user.id, database.communityMembers)
-  });
+  res.json({ success: true, isJoined: false, memberCount: community.memberCount });
 });
 
-// PUT /api/communities/:id/members/:userId/role - Manage community member role (e.g. member -> moderator)
-communitiesRouter.put('/:id/members/:userId/role', requireAuth, (req: AuthenticatedRequest, res) => {
-  const operator = req.user!;
-  const database = db.get();
-  const community = (database.communities || []).find(c => c.id === req.params.id);
-
-  if (!community) {
-    return res.status(404).json({ error: 'Community not found' });
-  }
-
-  // Must be owner or admin
-  if (community.creatorId !== operator.id && operator.role !== 'admin') {
-    return res.status(403).json({ error: 'Unauthorized to manage member roles in this community' });
-  }
-
-  const { role } = req.body;
-  if (!['moderator', 'member'].includes(role)) {
-    return res.status(400).json({ error: "Role must be 'moderator' or 'member'" });
-  }
-
-  const targetMember = (database.communityMembers || []).find(
-    m => m.communityId === community.id && m.userId === req.params.userId
-  );
-
-  if (!targetMember) {
-    return res.status(404).json({ error: 'Member not found in this community' });
-  }
-
-  if (targetMember.communityRole === 'owner') {
-    return res.status(400).json({ error: 'Cannot change the role of the community owner' });
-  }
-
-  targetMember.communityRole = role;
-  db.save(database);
-
-  res.json({ success: true, member: targetMember });
-});
-
-// DELETE /api/communities/:id/members/:userId - Remove a member from the community
-communitiesRouter.delete('/:id/members/:userId', requireAuth, (req: AuthenticatedRequest, res) => {
-  const operator = req.user!;
-  const database = db.get();
-  const community = (database.communities || []).find(c => c.id === req.params.id);
-
-  if (!community) {
-    return res.status(404).json({ error: 'Community not found' });
-  }
-
-  // Must be owner or admin
-  if (community.creatorId !== operator.id && operator.role !== 'admin') {
-    return res.status(403).json({ error: 'Unauthorized to remove members from this community' });
-  }
-
-  if (req.params.userId === community.creatorId) {
-    return res.status(400).json({ error: 'Cannot remove the community owner' });
-  }
-
-  if (!Array.isArray(database.communityMembers)) database.communityMembers = [];
-
-  const previousCount = database.communityMembers.length;
-  database.communityMembers = database.communityMembers.filter(
-    m => !(m.communityId === community.id && m.userId === req.params.userId)
-  );
-
-  if (database.communityMembers.length === previousCount) {
-    return res.status(404).json({ error: 'Member not found in community' });
-  }
-
-  community.memberCount = database.communityMembers.filter(m => m.communityId === community.id).length;
-  db.save(database);
-
-  res.json({ success: true });
-});
-
-// POST /api/communities/:id/verify-request - Request verification for a community
-communitiesRouter.post('/:id/verify-request', requireAuth, (req: AuthenticatedRequest, res) => {
+// GET /api/communities/:id/verification/status - Verification status for community
+communitiesRouter.get('/:id/verification/status', requireAuth, (req: AuthenticatedRequest, res) => {
   const user = req.user!;
   const database = db.get();
   const community = (database.communities || []).find(c => c.id === req.params.id);
@@ -381,7 +418,49 @@ communitiesRouter.post('/:id/verify-request', requireAuth, (req: AuthenticatedRe
     return res.status(404).json({ error: 'Community not found' });
   }
 
-  if (community.creatorId !== user.id && user.role !== 'admin') {
+  const isOwner = community.creatorId === user.id;
+  const isPlatformStaff = isPlatformOwnerOrAdmin(user);
+  if (!isOwner && !isPlatformStaff) {
+    return res.status(403).json({ error: 'Only the community creator can check or manage verification' });
+  }
+
+  const config = database.config?.verificationConfig || {
+    maxVerifiedCommunitiesPerUser: 1,
+    adminMultiCommunityAllowed: true
+  };
+
+  const existingVerifiedCommunities = (database.communities || []).filter(
+    c => c.creatorId === user.id && c.isVerified && c.id !== community.id
+  );
+
+  const maxAllowed = isPlatformStaff && config.adminMultiCommunityAllowed ? 999 : (config.maxVerifiedCommunitiesPerUser || 1);
+  const canRequestVerification = user.isVerified && (existingVerifiedCommunities.length < maxAllowed);
+
+  const activeRequest = (database.verificationRequests || []).find(
+    r => r.entityType === 'community' && r.communityId === community.id && r.status === 'under_review'
+  ) || null;
+
+  res.json({
+    isVerified: !!community.isVerified,
+    creatorIsVerified: !!user.isVerified || isPlatformStaff,
+    canRequestVerification,
+    maxAllowed,
+    existingVerifiedCount: existingVerifiedCommunities.length,
+    activeRequest
+  });
+});
+
+// POST /api/communities/:id/verification/request - Submit verification for community
+communitiesRouter.post('/:id/verification/request', requireAuth, (req: AuthenticatedRequest, res) => {
+  const user = req.user!;
+  const database = db.get();
+  const community = (database.communities || []).find(c => c.id === req.params.id);
+
+  if (!community) {
+    return res.status(404).json({ error: 'Community not found' });
+  }
+
+  if (community.creatorId !== user.id && !isPlatformOwnerOrAdmin(user)) {
     return res.status(403).json({ error: 'Only the community creator can request verification' });
   }
 
@@ -389,25 +468,21 @@ communitiesRouter.post('/:id/verify-request', requireAuth, (req: AuthenticatedRe
     return res.status(400).json({ error: 'This community is already verified' });
   }
 
-  // 1. Requirement: User account itself must be verified
-  if (!user.isVerified) {
-    return res.status(400).json({
-      error: 'Your user account must be verified before you can request verification for a community.'
-    });
+  if (!user.isVerified && !isPlatformOwnerOrAdmin(user)) {
+    return res.status(400).json({ error: 'You must have a verified creator profile before requesting community verification.' });
   }
 
-  // 2. Verified community limit for normal users (1 verified community limit)
   const config = database.config?.verificationConfig || {
     maxVerifiedCommunitiesPerUser: 1,
     adminMultiCommunityAllowed: true
   };
 
-  const isAdmin = user.role === 'admin';
+  const isPlatformStaff = isPlatformOwnerOrAdmin(user);
   const existingVerifiedCommunities = (database.communities || []).filter(
     c => c.creatorId === user.id && c.isVerified && c.id !== community.id
   );
 
-  const maxAllowed = isAdmin && config.adminMultiCommunityAllowed ? 999 : (config.maxVerifiedCommunitiesPerUser || 1);
+  const maxAllowed = isPlatformStaff && config.adminMultiCommunityAllowed ? 999 : (config.maxVerifiedCommunitiesPerUser || 1);
 
   if (existingVerifiedCommunities.length >= maxAllowed) {
     const verifiedName = existingVerifiedCommunities[0]?.name || 'another community';
@@ -416,7 +491,6 @@ communitiesRouter.post('/:id/verify-request', requireAuth, (req: AuthenticatedRe
     });
   }
 
-  // Check pending requests
   if (!Array.isArray(database.verificationRequests)) database.verificationRequests = [];
   const existingPending = database.verificationRequests.find(
     r => r.entityType === 'community' && r.communityId === community.id && r.status === 'under_review'
@@ -444,85 +518,353 @@ communitiesRouter.post('/:id/verify-request', requireAuth, (req: AuthenticatedRe
   res.status(201).json({ request: newRequest });
 });
 
-// GET /api/posts - Get community/feed posts
-communitiesRouter.get('/feed/posts', (req: AuthenticatedRequest, res) => {
-  const { communityId, authorId, tab } = req.query;
+// GET /api/communities/:id - Get community by ID or slug
+communitiesRouter.get('/:id', (req: AuthenticatedRequest, res) => {
   const database = db.get();
-  let posts = [...(database.posts || [])];
-
-  if (communityId && typeof communityId === 'string') {
-    posts = posts.filter(p => p.communityId === communityId);
+  const idOrSlug = req.params.id.toLowerCase();
+  const community = (database.communities || []).find(
+    c => c.id === req.params.id || c.slug.toLowerCase() === idOrSlug
+  );
+  if (!community) {
+    return res.status(404).json({ error: 'Community not found' });
   }
 
-  if (authorId && typeof authorId === 'string') {
-    posts = posts.filter(p => p.authorId === authorId);
-  }
-
-  // If tab === 'following' and user is logged in
-  if (tab === 'following' && req.user) {
-    const followingUserIds = (database.follows || [])
-      .filter(f => f.followerId === req.user!.id)
-      .map(f => f.followingId);
-    
-    posts = posts.filter(p => followingUserIds.includes(p.authorId));
-  }
-
-  // Check liked status for logged in user
-  const userLikes = req.user ? (database.likes || []).filter(l => l.userId === req.user!.id && l.targetType === 'post').map(l => l.targetId) : [];
-
-  const enrichedPosts = posts.map(p => ({
-    ...p,
-    likedByMe: userLikes.includes(p.id)
-  }));
-
-  res.json({ posts: enrichedPosts });
+  const members = database.communityMembers || [];
+  const enriched = enrichCommunity(community, req.user?.id, members);
+  res.json({ community: enriched });
 });
 
-// POST /api/posts - Create a new post
-communitiesRouter.post('/posts', requireAuth, (req: AuthenticatedRequest, res) => {
-  const { content, communityId, mediaUrl, nftId } = req.body;
+// PUT /api/communities/:id - Update community settings
+communitiesRouter.put('/:id', requireAuth, (req: AuthenticatedRequest, res) => {
   const user = req.user!;
-
-  if (!content || typeof content !== 'string' || !content.trim()) {
-    return res.status(400).json({ error: 'Post content cannot be empty' });
-  }
-
   const database = db.get();
-  if (!Array.isArray(database.posts)) database.posts = [];
+  const community = (database.communities || []).find(c => c.id === req.params.id);
 
-  let communityName: string | undefined;
-  if (communityId) {
-    const com = (database.communities || []).find(c => c.id === communityId);
-    if (com) {
-      communityName = com.name;
-      com.postCount = (com.postCount || 0) + 1;
+  if (!community) {
+    return res.status(404).json({ error: 'Community not found' });
+  }
+
+  // Only community creator or platform owner/admin can edit settings
+  if (community.creatorId !== user.id && !isPlatformOwnerOrAdmin(user)) {
+    return res.status(403).json({ error: 'Only the community owner can update settings' });
+  }
+
+  const {
+    name,
+    handle,
+    description,
+    avatar,
+    banner,
+    category,
+    socialLinks,
+    rules,
+    allowMemberPosts,
+    postPermissionMode,
+    postCooldownSeconds,
+    joiningMode,
+    aboutAnimation,
+    customLinks
+  } = req.body;
+
+  if (name !== undefined) {
+    if (typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ error: 'Community name cannot be empty' });
     }
+    community.name = name.trim();
   }
 
-  let nftItem = undefined;
-  if (nftId) {
-    nftItem = database.nfts.find(n => n.id === nftId);
+  if (handle !== undefined) {
+    const cleanHandle = `@${handle.replace(/^@+/, '').toLowerCase().replace(/[^a-z0-9_]+/g, '')}`;
+    const duplicate = (database.communities || []).find(
+      c => c.id !== community.id && c.handle && c.handle.toLowerCase() === cleanHandle.toLowerCase()
+    );
+    if (duplicate) {
+      return res.status(400).json({ error: `The handle ${cleanHandle} is already taken by another community.` });
+    }
+    community.handle = cleanHandle;
   }
 
-  const newPost: CommunityPost = {
-    id: `post_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-    communityId: communityId || undefined,
-    communityName,
-    authorId: user.id,
-    authorUsername: user.username,
-    authorDisplayName: user.displayName || user.username,
-    authorAvatar: user.avatar,
-    authorVerified: user.isVerified || false,
-    content: content.trim(),
-    mediaUrl: mediaUrl || undefined,
-    nftId: nftId || undefined,
-    nft: nftItem,
-    likes: 0,
-    commentCount: 0,
+  if (description !== undefined) {
+    community.description = (description || '').trim();
+  }
+
+  if (avatar !== undefined) {
+    community.avatar = avatar;
+  }
+
+  if (banner !== undefined) {
+    community.banner = banner;
+  }
+
+  if (category !== undefined) {
+    community.category = category;
+  }
+
+  if (aboutAnimation !== undefined) {
+    community.aboutAnimation = aboutAnimation;
+  }
+
+  if (postPermissionMode !== undefined) {
+    community.postPermissionMode = postPermissionMode;
+  }
+
+  if (postCooldownSeconds !== undefined) {
+    community.postCooldownSeconds = Number(postCooldownSeconds) || 0;
+  }
+
+  if (joiningMode !== undefined) {
+    community.joiningMode = joiningMode;
+  }
+
+  if (customLinks !== undefined && Array.isArray(customLinks)) {
+    community.customLinks = customLinks;
+  }
+
+  if (socialLinks !== undefined) {
+    community.socialLinks = socialLinks;
+  }
+
+  if (rules !== undefined && Array.isArray(rules)) {
+    community.rules = rules.filter(r => typeof r === 'string' && r.trim());
+  }
+
+  if (allowMemberPosts !== undefined) {
+    community.allowMemberPosts = !!allowMemberPosts;
+  }
+
+  db.save(database);
+
+  const members = database.communityMembers || [];
+  res.json({
+    community: enrichCommunity(community, user.id, members),
+    success: true
+  });
+});
+
+// POST /api/communities/:id/roles - Create or update custom role
+communitiesRouter.post('/:id/roles', requireAuth, (req: AuthenticatedRequest, res) => {
+  const user = req.user!;
+  const database = db.get();
+  const community = (database.communities || []).find(c => c.id === req.params.id);
+
+  if (!community) {
+    return res.status(404).json({ error: 'Community not found' });
+  }
+
+  if (community.creatorId !== user.id && !isPlatformOwnerOrAdmin(user)) {
+    return res.status(403).json({ error: 'Only the community owner can manage roles' });
+  }
+
+  if (!Array.isArray(community.roles)) community.roles = [];
+
+  const { id, name, description, color, fontStyle, icon, badgeUrl, animation, permissions } = req.body;
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Role name is required' });
+  }
+
+  const roleId = id || `role_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const existingIdx = community.roles.findIndex(r => r.id === roleId);
+
+  const roleObj = {
+    id: roleId,
+    communityId: community.id,
+    name: name.trim(),
+    description: description?.trim(),
+    color: color || '#ff5500',
+    fontStyle: fontStyle || 'default',
+    icon: icon || 'award',
+    badgeUrl: badgeUrl?.trim() || undefined,
+    animation: animation || 'none',
+    permissions: permissions || { canPostContent: true },
     createdAt: new Date().toISOString()
   };
 
-  database.posts.unshift(newPost);
+  if (existingIdx !== -1) {
+    community.roles[existingIdx] = roleObj;
+  } else {
+    community.roles.push(roleObj);
+  }
+
   db.save(database);
-  res.status(201).json({ post: newPost });
+  res.json({ role: roleObj, roles: community.roles, success: true });
+});
+
+// DELETE /api/communities/:id/roles/:roleId - Delete a custom role
+communitiesRouter.delete('/:id/roles/:roleId', requireAuth, (req: AuthenticatedRequest, res) => {
+  const user = req.user!;
+  const database = db.get();
+  const community = (database.communities || []).find(c => c.id === req.params.id);
+
+  if (!community) {
+    return res.status(404).json({ error: 'Community not found' });
+  }
+
+  if (community.creatorId !== user.id && !isPlatformOwnerOrAdmin(user)) {
+    return res.status(403).json({ error: 'Only the community owner can delete roles' });
+  }
+
+  if (Array.isArray(community.roles)) {
+    community.roles = community.roles.filter(r => r.id !== req.params.roleId);
+  }
+
+  // Remove this role from any members who had it assigned
+  if (Array.isArray(database.communityMembers)) {
+    database.communityMembers.forEach(m => {
+      if (m.communityId === community.id && Array.isArray(m.assignedRoleIds)) {
+        m.assignedRoleIds = m.assignedRoleIds.filter(rId => rId !== req.params.roleId);
+      }
+    });
+  }
+
+  db.save(database);
+  res.json({ success: true, roles: community.roles });
+});
+
+// POST /api/communities/:id/roles/assign - Assign or unassign role to member
+communitiesRouter.post('/:id/roles/assign', requireAuth, (req: AuthenticatedRequest, res) => {
+  const user = req.user!;
+  const { userId, roleId, assigned } = req.body;
+  const database = db.get();
+  const community = (database.communities || []).find(c => c.id === req.params.id);
+
+  if (!community) {
+    return res.status(404).json({ error: 'Community not found' });
+  }
+
+  if (community.creatorId !== user.id && !isPlatformOwnerOrAdmin(user)) {
+    return res.status(403).json({ error: 'Only the community owner can assign roles' });
+  }
+
+  const member = (database.communityMembers || []).find(
+    m => m.communityId === community.id && m.userId === userId
+  );
+
+  if (!member) {
+    return res.status(404).json({ error: 'Member not found in this community' });
+  }
+
+  if (!Array.isArray(member.assignedRoleIds)) {
+    member.assignedRoleIds = [];
+  }
+
+  if (assigned) {
+    if (!member.assignedRoleIds.includes(roleId)) {
+      member.assignedRoleIds.push(roleId);
+    }
+  } else {
+    member.assignedRoleIds = member.assignedRoleIds.filter(r => r !== roleId);
+  }
+
+  db.save(database);
+  res.json({ success: true, member });
+});
+
+// POST /api/communities/:id/spaces - Create or update a Space
+communitiesRouter.post('/:id/spaces', requireAuth, (req: AuthenticatedRequest, res) => {
+  const user = req.user!;
+  const database = db.get();
+  const community = (database.communities || []).find(c => c.id === req.params.id);
+
+  if (!community) {
+    return res.status(404).json({ error: 'Community not found' });
+  }
+
+  if (community.creatorId !== user.id && !isPlatformOwnerOrAdmin(user)) {
+    return res.status(403).json({ error: 'Only the community owner can manage Spaces' });
+  }
+
+  if (!Array.isArray(community.spaces)) community.spaces = [];
+
+  const { id, name, description, icon } = req.body;
+  const cleanName = (name || '').trim().replace(/^#+/, '');
+
+  if (!cleanName) {
+    return res.status(400).json({ error: 'Space name is required' });
+  }
+
+  const spaceId = id || `space_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const existingIdx = community.spaces.findIndex(s => s.id === spaceId);
+
+  const spaceObj = {
+    id: spaceId,
+    communityId: community.id,
+    name: cleanName,
+    slug: cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    description: description?.trim(),
+    icon: icon || 'layers',
+    order: existingIdx !== -1 ? community.spaces[existingIdx].order : community.spaces.length + 1,
+    createdAt: new Date().toISOString()
+  };
+
+  if (existingIdx !== -1) {
+    community.spaces[existingIdx] = spaceObj;
+  } else {
+    community.spaces.push(spaceObj);
+  }
+
+  db.save(database);
+  res.json({ space: spaceObj, spaces: community.spaces, success: true });
+});
+
+// DELETE /api/communities/:id/spaces/:spaceId - Delete a Space
+communitiesRouter.delete('/:id/spaces/:spaceId', requireAuth, (req: AuthenticatedRequest, res) => {
+  const user = req.user!;
+  const database = db.get();
+  const community = (database.communities || []).find(c => c.id === req.params.id);
+
+  if (!community) {
+    return res.status(404).json({ error: 'Community not found' });
+  }
+
+  if (community.creatorId !== user.id && !isPlatformOwnerOrAdmin(user)) {
+    return res.status(403).json({ error: 'Only the community owner can delete Spaces' });
+  }
+
+  if (Array.isArray(community.spaces)) {
+    community.spaces = community.spaces.filter(s => s.id !== req.params.spaceId);
+  }
+
+  db.save(database);
+  res.json({ success: true, spaces: community.spaces });
+});
+
+// DELETE /api/communities/:id - Delete a community (Owner only)
+communitiesRouter.delete('/:id', requireAuth, (req: AuthenticatedRequest, res) => {
+  const user = req.user!;
+  const database = db.get();
+  const communityIndex = (database.communities || []).findIndex(c => c.id === req.params.id);
+
+  if (communityIndex === -1) {
+    return res.status(404).json({ error: 'Community not found' });
+  }
+
+  const community = database.communities[communityIndex];
+  if (community.creatorId !== user.id && !isPlatformOwnerOrAdmin(user)) {
+    return res.status(403).json({ error: 'Only the community owner can delete this community' });
+  }
+
+  // Remove community
+  database.communities.splice(communityIndex, 1);
+
+  // Remove associated memberships
+  database.communityMembers = (database.communityMembers || []).filter(m => m.communityId !== community.id);
+
+  // Remove associated community posts and their comments/likes
+  const deletedPosts = (database.posts || []).filter(p => p.communityId === community.id);
+  const deletedPostIds = deletedPosts.map(p => p.id);
+  database.posts = (database.posts || []).filter(p => p.communityId !== community.id);
+
+  if (Array.isArray(database.comments)) {
+    database.comments = database.comments.filter(c => !deletedPostIds.includes(c.postId));
+  }
+  if (Array.isArray(database.likes)) {
+    database.likes = database.likes.filter(l => !(l.targetType === 'post' && deletedPostIds.includes(l.targetId)));
+  }
+  if (Array.isArray(database.verificationRequests)) {
+    database.verificationRequests = database.verificationRequests.filter(r => r.communityId !== community.id);
+  }
+
+  db.save(database);
+  res.json({ success: true, deletedCommunityId: community.id });
 });

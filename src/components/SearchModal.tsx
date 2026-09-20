@@ -219,10 +219,13 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onNav
                     <div className="flex items-center gap-3">
                       <img src={cr.avatar} alt={cr.displayName} className="w-8 h-8 rounded-full object-cover" />
                       <div className="text-left">
-                        <div className="text-xs font-bold text-white group-hover:text-[#ff5500] flex items-center gap-1">
-                          {cr.displayName} {cr.isVerified && <VerifiedBadge size="sm" />}
+                        <div className="text-xs font-bold text-white group-hover:text-[#ff5500]">
+                          {cr.displayName}
                         </div>
-                        <div className="text-[11px] text-[#6b7280]">@{cr.username}</div>
+                        <div className="text-[11px] text-[#6b7280] flex items-center gap-1">
+                          <span>@{cr.username}</span>
+                          {cr.isVerified && <VerifiedBadge size="sm" />}
+                        </div>
                       </div>
                     </div>
                     <span className="text-[10px] font-mono-code px-2 py-0.5 rounded bg-[#1c2230] text-[#8e97a8]">

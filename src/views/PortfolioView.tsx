@@ -55,10 +55,13 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
       return;
     }
     try {
-      const res = await api.getUserPortfolio(user.username || user.id);
-      setPortfolioData(res.portfolio);
+      const identifier = user.id || user.username || 'me';
+      const res = await api.getUserPortfolio(identifier);
+      if (res && res.portfolio) {
+        setPortfolioData(res.portfolio);
+      }
     } catch (err) {
-      console.error('Failed to load portfolio:', err);
+      console.warn('Portfolio load notice:', err);
     } finally {
       setLoading(false);
     }
@@ -132,31 +135,39 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 <h1 className="text-lg sm:text-xl font-bold text-white">
                   {user ? user.displayName : 'Solana Portfolio'}
                 </h1>
-                {user?.isVerified && <VerifiedBadge size="sm" />}
               </div>
-              {publicKey && (
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs font-mono-code text-[#8e97a8]">
-                    {publicKey.length >= 16 ? `${publicKey.slice(0, 8)}...${publicKey.slice(-8)}` : publicKey}
-                  </span>
-                  <button
-                    onClick={handleCopyAddress}
-                    className="p-1 rounded text-[#6b7280] hover:text-white"
-                    title="Copy address"
-                  >
-                    {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                  </button>
-                  <a
-                    href={`https://explorer.solana.com/address/${publicKey}?cluster=devnet`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-mono-code text-[#ff5500] hover:underline flex items-center gap-0.5"
-                  >
-                    <span>Explorer</span>
-                    <ExternalLink size={10} />
-                  </a>
-                </div>
-              )}
+              <div className="flex items-center gap-2 mt-1">
+                {user && (
+                  <div className="flex items-center gap-1 text-xs font-mono-code text-[#6b7280]">
+                    <span>@{user.username}</span>
+                    {user.isVerified && <VerifiedBadge size="sm" />}
+                    <span>•</span>
+                  </div>
+                )}
+                {publicKey && (
+                  <>
+                    <span className="text-xs font-mono-code text-[#8e97a8]">
+                      {publicKey.length >= 16 ? `${publicKey.slice(0, 8)}...${publicKey.slice(-8)}` : publicKey}
+                    </span>
+                    <button
+                      onClick={handleCopyAddress}
+                      className="p-1 rounded text-[#6b7280] hover:text-white"
+                      title="Copy address"
+                    >
+                      {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                    </button>
+                    <a
+                      href={`https://explorer.solana.com/address/${publicKey}?cluster=devnet`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-mono-code text-[#ff5500] hover:underline flex items-center gap-0.5"
+                    >
+                      <span>Explorer</span>
+                      <ExternalLink size={10} />
+                    </a>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 

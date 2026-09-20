@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcryptjs';
-import { User, NFTCollection, NFT, Auction, Bounty, ActivityEvent, Notification, PlatformConfig, LikeRecord, Community, CommunityMember, CommunityPost, FollowRecord, VerificationRequest } from '../src/types';
+import { User, NFTCollection, NFT, Auction, Bounty, ActivityEvent, Notification, PlatformConfig, LikeRecord, Community, CommunityMember, CommunityPost, PostComment, FollowRecord, VerificationRequest } from '../src/types';
 
 export interface DatabaseSchema {
   users: User[];
@@ -15,6 +15,7 @@ export interface DatabaseSchema {
   userPasswords: Record<string, string>; // userId -> bcrypt hash
   likes: LikeRecord[];
   posts: CommunityPost[];
+  comments: PostComment[];
   communities: Community[];
   communityMembers: CommunityMember[];
   follows: FollowRecord[];
@@ -33,7 +34,7 @@ function getInitialDatabase(): DatabaseSchema {
   const initialPasswordHash = bcrypt.hashSync('EntSolana2026!', 10);
   const now = new Date().toISOString();
 
-  // Admin user requested by user
+  // Platform owner user requested by user
   const adminUser: User = {
     id: 'usr_ace_admin',
     email: 'pervercy23@gmail.com',
@@ -43,7 +44,7 @@ function getInitialDatabase(): DatabaseSchema {
     banner: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=1200&auto=format&fit=crop&q=80',
     bio: 'Genesis creator & protocol architect. Curator of organic geometric artifacts on Solana.',
     walletAddress: 'ACEp1aTfX7h8Kq3w9uV4y2z5L1m6NoP8qRsTuVwXyZ',
-    role: 'admin',
+    role: 'owner',
     isVerified: true,
     plan: 'unlimited',
     bot_unlimited: true,
@@ -524,6 +525,7 @@ function getInitialDatabase(): DatabaseSchema {
     userPasswords,
     likes: [],
     posts: [],
+    comments: [],
     communities: [],
     communityMembers: [],
     follows: [],
@@ -543,18 +545,18 @@ class Database {
       if (fs.existsSync(DB_FILE)) {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
         const parsed = JSON.parse(raw);
-        // Ensure admin user exists and has verified + admin role
+        // Ensure platform owner user exists and has verified + owner role
         const hasAdmin = parsed.users?.some((u: User) => u.email === 'pervercy23@gmail.com');
         if (!hasAdmin) {
           const init = getInitialDatabase();
           return this.save(init);
         }
         
-        // Ensure pervercy23@gmail.com is verified
+        // Ensure pervercy23@gmail.com is verified and owner
         const admin = parsed.users?.find((u: User) => u.email === 'pervercy23@gmail.com');
         if (admin) {
           admin.isVerified = true;
-          admin.role = 'admin';
+          admin.role = 'owner';
           if (!admin.plan) admin.plan = 'unlimited';
           admin.bot_unlimited = true;
         }
@@ -567,12 +569,14 @@ class Database {
 
         if (!Array.isArray(parsed.likes)) parsed.likes = [];
         if (!Array.isArray(parsed.posts)) parsed.posts = [];
+        if (!Array.isArray(parsed.comments)) parsed.comments = [];
         if (!Array.isArray(parsed.communities)) parsed.communities = [];
         if (!Array.isArray(parsed.communityMembers)) parsed.communityMembers = [];
         if (!Array.isArray(parsed.follows)) parsed.follows = [];
         if (!Array.isArray(parsed.verificationRequests)) parsed.verificationRequests = [];
 
         if (!parsed.config) parsed.config = {} as any;
+        if (!parsed.config.communityCreationCooldownHours) parsed.config.communityCreationCooldownHours = 10;
         if (!parsed.config.verificationConfig) {
           parsed.config.verificationConfig = {
             minAccountAgeDays: 0,
@@ -580,8 +584,43 @@ class Database {
             minSolVolume: 0.1,
             maxVerifiedCommunitiesPerUser: 1,
             adminMultiCommunityAllowed: true,
-            cooldownDays: 7
+            cooldownDays: 7,
+            allowedCategories: ['Creator', 'Artist', 'Collector', 'Community Leader', 'Builder', 'Public Figure', 'Founder', 'Other'],
+            foundingConfig: {
+              enabled: true,
+              startDate: '2026-09-01T00:00:00.000Z',
+              endDate: '2026-10-31T23:59:59.999Z',
+              minPostsCount: 0,
+              minActiveDays: 0,
+              minInteractions: 0
+            }
           };
+        } else {
+          if (!parsed.config.verificationConfig.allowedCategories) {
+            parsed.config.verificationConfig.allowedCategories = ['Creator', 'Artist', 'Collector', 'Community Leader', 'Builder', 'Public Figure', 'Founder', 'Other'];
+          }
+          if (!parsed.config.verificationConfig.foundingConfig) {
+            parsed.config.verificationConfig.foundingConfig = {
+              enabled: true,
+              startDate: '2026-09-01T00:00:00.000Z',
+              endDate: '2026-10-31T23:59:59.999Z',
+              minPostsCount: 0,
+              minActiveDays: 0,
+              minInteractions: 0
+            };
+          }
+        }
+
+        // Ensure owner account has verified & founding status
+        const aceUser = (parsed.users || []).find(u => u.id === 'usr_ace_admin' || u.username.toLowerCase() === 'ace');
+        if (aceUser) {
+          aceUser.role = 'owner';
+          aceUser.isVerified = true;
+          aceUser.isFoundingMember = true;
+          if (!aceUser.foundingMemberGrantedAt) {
+            aceUser.foundingMemberGrantedAt = aceUser.createdAt;
+            aceUser.foundingMemberReason = 'Genesis protocol architect & platform owner';
+          }
         }
         if (!parsed.config.maxBioLength) parsed.config.maxBioLength = 160;
         if (!parsed.config.maxAccountsPerDevice) parsed.config.maxAccountsPerDevice = 3;

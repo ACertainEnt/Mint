@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { X, Mail, Lock, User as UserIcon, Wallet, ArrowRight, Shield, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Mail, Lock, User as UserIcon, Wallet, ArrowRight, Shield, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
+import { api } from '../lib/api';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -20,11 +21,56 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Username live check states
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [usernameStatus, setUsernameStatus] = useState<{
+    available: boolean;
+    message?: string;
+    code?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (mode !== 'register' || !username || username.trim().length < 3) {
+      setUsernameStatus(null);
+      setCheckingUsername(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setCheckingUsername(true);
+      try {
+        const res = await api.checkUsername(username.trim());
+        setUsernameStatus({
+          available: res.available,
+          message: res.message,
+          code: res.code
+        });
+      } catch (err: any) {
+        setUsernameStatus({
+          available: false,
+          message: err.message || 'Error validating username'
+        });
+      } finally {
+        setCheckingUsername(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [username, mode]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (mode === 'register') {
+      if (usernameStatus && !usernameStatus.available) {
+        setError(usernameStatus.message || 'Please choose an available username.');
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -296,9 +342,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#8e97a8] mb-1">
-                      Username (@handle)
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-[#8e97a8]">
+                        Username (@handle)
+                      </label>
+                      {checkingUsername && (
+                        <span className="text-[10px] font-mono-code text-[#8e97a8] flex items-center gap-1">
+                          <RefreshCw size={10} className="animate-spin text-[#ff5500]" />
+                          <span>Checking...</span>
+                        </span>
+                      )}
+                      {!checkingUsername && usernameStatus && (
+                        <span className={`text-[10px] font-mono-code font-bold flex items-center gap-1 ${
+                          usernameStatus.available ? 'text-emerald-400' : 'text-red-400'
+                        }`}>
+                          {usernameStatus.available ? (
+                            <>
+                              <CheckCircle2 size={11} />
+                              <span>Available</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle size={11} />
+                              <span>{usernameStatus.code === 'RESERVED_USERNAME' ? 'Reserved Official Handle' : usernameStatus.message || 'Unavailable'}</span>
+                            </>
+                          )}
+                        </span>
+                      )}
+                    </div>
                     <div className="relative">
                       <span className="absolute left-3 top-2.5 text-[#6b7280] font-mono-code text-sm">@</span>
                       <input
@@ -307,9 +378,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         value={username}
                         onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
                         placeholder="sol_collector"
-                        className="w-full bg-[#161a22] border border-[#232938] rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-[#525a6c] focus:outline-none focus:border-[#ff5500]"
+                        className={`w-full bg-[#161a22] border rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-[#525a6c] focus:outline-none transition-colors ${
+                          usernameStatus && !usernameStatus.available
+                            ? 'border-red-600/70 focus:border-red-500'
+                            : usernameStatus && usernameStatus.available
+                            ? 'border-emerald-600/60 focus:border-emerald-500'
+                            : 'border-[#232938] focus:border-[#ff5500]'
+                        }`}
                       />
                     </div>
+                    {usernameStatus && !usernameStatus.available && (
+                      <p className="text-[11px] text-red-400/90 mt-1 font-mono-code">
+                        {usernameStatus.message}
+                      </p>
+                    )}
                   </div>
                 </>
               )}

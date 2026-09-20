@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Image as ImageIcon, CheckCircle2, AlertCircle, RefreshCw, Trash2, Smartphone, HardDrive, Info } from 'lucide-react';
+import { Upload, Image as ImageIcon, CheckCircle2, AlertCircle, RefreshCw, Trash2, Smartphone, HardDrive, Info, Camera } from 'lucide-react';
 import { api } from '../lib/api';
 
 export interface UploadedFileMeta {
@@ -36,6 +36,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   onUploadingChange
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -44,14 +45,14 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   const [isDragOver, setIsDragOver] = useState(false);
   const [lastSelectedFile, setLastSelectedFile] = useState<File | null>(null);
 
-  const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+  const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
 
   const handleFile = async (file: File) => {
     setError(null);
 
     // 1. Format validation
     if (!allowedMimeTypes.includes(file.type.toLowerCase())) {
-      setError(`Unsupported format (${file.type || 'unknown'}). Please choose a PNG, JPG, or WebP image.`);
+      setError(`Unsupported format (${file.type || 'unknown'}). Please choose a PNG, JPG, WebP, or GIF image.`);
       return;
     }
 
@@ -183,12 +184,24 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         </p>
       )}
 
-      {/* Hidden Native File Input */}
+      {/* Hidden Native File Input (Storage: PNG, JPG, WebP, GIF) */}
       <input
         ref={fileInputRef}
         id={id}
         type="file"
-        accept="image/png,image/jpeg,image/webp"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        onChange={handleInputChange}
+        disabled={isUploading}
+        className="hidden"
+      />
+
+      {/* Hidden Camera Capture Input */}
+      <input
+        ref={cameraInputRef}
+        id={`${id}-camera`}
+        type="file"
+        accept="image/*"
+        capture="environment"
         onChange={handleInputChange}
         disabled={isUploading}
         className="hidden"
@@ -307,19 +320,30 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                 Select {label.toLowerCase()}
               </p>
               <p className="text-[11px] text-[#8e97a8]">
-                PNG, JPG, or WebP up to {maxSizeMB}MB
+                PNG, JPG, WebP, or GIF up to {maxSizeMB}MB
               </p>
             </div>
 
-            {/* Tap target button optimized for mobile Android Chrome & wallets */}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="mt-1 w-full sm:w-auto px-4 py-2.5 rounded-lg bg-[#161b26] hover:bg-[#1f2635] active:bg-[#283144] border border-[#283042] text-xs font-bold text-white flex items-center justify-center gap-2 min-h-[44px] transition-all shadow-sm active:scale-98"
-            >
-              <Smartphone size={14} className="text-[#ff5500]" />
-              <span>Upload from device</span>
-            </button>
+            {/* Direct Image/GIF upload and Camera capture triggers */}
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-1 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-3.5 py-2 rounded-lg bg-[#161b26] hover:bg-[#1f2635] active:bg-[#283144] border border-[#283042] text-xs font-bold text-white flex items-center justify-center gap-2 min-h-[42px] transition-all shadow-sm active:scale-98 cursor-pointer"
+              >
+                <Smartphone size={14} className="text-[#ff5500]" />
+                <span>Upload Image / GIF</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                className="px-3.5 py-2 rounded-lg bg-[#161b26] hover:bg-[#1f2635] active:bg-[#283144] border border-[#283042] text-xs font-bold text-white flex items-center justify-center gap-2 min-h-[42px] transition-all shadow-sm active:scale-98 cursor-pointer"
+              >
+                <Camera size={14} className="text-[#ff5500]" />
+                <span>Camera Capture</span>
+              </button>
+            </div>
 
             <span className="hidden sm:inline text-[10px] text-[#6b7280]">
               or drag & drop file here

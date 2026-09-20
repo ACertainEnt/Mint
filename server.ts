@@ -13,6 +13,7 @@ import { generalRouter } from './server/routes/general';
 import { mintBotRouter } from './server/mintbot/router';
 import { uploadRouter } from './server/routes/upload';
 import { likesRouter } from './server/routes/likes';
+import { postsRouter } from './server/routes/posts';
 import { communitiesRouter } from './server/routes/communities';
 
 async function startServer() {
@@ -21,6 +22,14 @@ async function startServer() {
 
   // JSON Body Parser with ample limit for metadata/images
   app.use(express.json({ limit: '10mb' }));
+
+  // Handle JSON parse errors gracefully
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err instanceof SyntaxError && 'body' in err) {
+      return res.status(400).json({ error: 'Invalid JSON request payload' });
+    }
+    next(err);
+  });
 
   // Global authentication & session token extraction
   app.use(authMiddleware);
@@ -40,6 +49,7 @@ async function startServer() {
   app.use('/api/mintbot', mintBotRouter);
   app.use('/api/likes', likesRouter);
   app.use('/api/communities', communitiesRouter);
+  app.use('/api', postsRouter);
   app.use('/api', uploadRouter);
   app.use('/api', generalRouter);
 

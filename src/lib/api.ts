@@ -1,4 +1,4 @@
-import { User, NFTCollection, NFT, Auction, Bounty, ActivityEvent, Notification, PlatformConfig, MintBotQueryResponse, MintBotUsage, MintBotSuggestionGroup, Community, CommunityMember, CommunityPost } from '../types';
+import { User, NFTCollection, NFT, Auction, Bounty, ActivityEvent, Notification, PlatformConfig, MintBotQueryResponse, MintBotUsage, MintBotSuggestionGroup, Community, CommunityMember, CommunityPost, CommunityRole, CommunitySpace, PostPoll } from '../types';
 
 const TOKEN_KEY = 'mint_auth_token';
 
@@ -14,7 +14,7 @@ export function clearStoredToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(endpoint: string, options: RequestInit = {}, retries = 2): Promise<T> {
   const token = getStoredToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -25,21 +25,45 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(endpoint, {
-    ...options,
-    headers
-  });
-
-  if (!response.ok) {
-    let errorMsg = `HTTP error ${response.status}`;
+  let lastError: any;
+  for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const data = await response.json();
-      if (data.error) errorMsg = data.error;
-    } catch {}
-    throw new Error(errorMsg);
-  }
+      const response = await fetch(endpoint, {
+        ...options,
+        headers
+      });
 
-  return response.json();
+      if (!response.ok) {
+        let errorMsg = `HTTP error ${response.status}`;
+        try {
+          const data = await response.json();
+          if (data.error) errorMsg = data.error;
+        } catch {}
+        throw new Error(errorMsg);
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error(`Endpoint ${endpoint} did not return JSON`);
+      }
+
+      return await response.json();
+    } catch (err: any) {
+      lastError = err;
+      const isNetworkError =
+        err.name === 'TypeError' ||
+        err.message?.includes('Failed to fetch') ||
+        err.message?.includes('NetworkError') ||
+        err.message?.includes('Load failed');
+
+      if (isNetworkError && attempt < retries) {
+        await new Promise(res => setTimeout(res, 300 * (attempt + 1)));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError;
 }
 
 export const api = {
@@ -92,7 +116,14 @@ export const api = {
   },
 
   async checkUsername(username: string) {
-    return request<{ available: boolean; error?: string; username: string }>(`/api/auth/check-username?username=${encodeURIComponent(username)}`);
+    return request<{
+      available: boolean;
+      code?: string;
+      message?: string;
+      error?: string;
+      username?: string;
+      normalized?: string;
+    }>(`/api/users/check-username?username=${encodeURIComponent(username)}`);
   },
 
   async completeProfile(data: { username: string; displayName?: string; avatar?: string; bio?: string }) {
@@ -414,7 +445,7 @@ export const api = {
     return request<{ likedIds: string[] }>('/api/likes/my-likes');
   },
 
-  async toggleLike(targetType: 'nft' | 'collection' | 'auction' | 'post' | 'bounty', targetId: string) {
+  async toggleLike(targetType: 'nft' | 'collection' | 'auction' | 'post' | 'bounty' | 'comment', targetId: string) {
     return request<{ liked: boolean; likes: number }>('/api/likes/toggle', {
       method: 'POST',
       body: JSON.stringify({ targetType, targetId })
@@ -432,9 +463,11 @@ export const api = {
   async getVerificationStatus() {
     return request<{
       isVerified: boolean;
+      isFoundingMember?: boolean;
       role: string;
       status: string;
       isEligible: boolean;
+      userSignals?: any;
       requirements: { id: string; label: string; required: number; current: number; met: boolean; unit?: string }[];
       activeRequest: any;
       lastRequest: any;
@@ -446,20 +479,43 @@ export const api = {
         canVerifyAnotherCommunity: boolean;
         verifiedCommunities: { id: string; name: string; slug: string }[];
       };
+      foundingConfig?: any;
     }>('/api/users/verification/status');
   },
 
-  async requestUserVerification(data: { justification?: string; portfolioUrl?: string }) {
+  async requestUserVerification(data?: {
+    category?: string;
+    justification?: string;
+    portfolioUrl?: string;
+    evidence?: {
+      links: string[];
+      documents?: string[];
+      notes?: string;
+    };
+  } | string) {
+    const payload = typeof data === 'string' ? { justification: data } : (data || {});
     return request<{ request: any }>('/api/users/verification/request', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async respondVerificationInfo(data: {
+    responseText: string;
+    additionalLinks?: string[];
+    additionalDocuments?: string[];
+  }) {
+    return request<{ success: boolean; request: any }>('/api/users/verification/respond-info', {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
 
-  async requestCommunityVerification(communityId: string, data?: { justification?: string }) {
+  async requestCommunityVerification(communityId: string, data?: { justification?: string } | string) {
+    const payload = typeof data === 'string' ? { justification: data } : (data || {});
     return request<{ request: any }>(`/api/communities/${encodeURIComponent(communityId)}/verify-request`, {
       method: 'POST',
-      body: JSON.stringify(data || {})
+      body: JSON.stringify(payload)
     });
   },
 
@@ -467,14 +523,41 @@ export const api = {
     return request<{ requests: any[] }>('/api/admin/verification-requests');
   },
 
-  async reviewVerificationRequest(id: string, action: 'approve' | 'reject', reason?: string) {
+  async reviewVerificationRequest(id: string, action: 'approve' | 'reject' | 'needs_info', reasonOrMessage?: string) {
     return request<{ success: boolean; request: any }>(`/api/admin/verification-requests/${encodeURIComponent(id)}/review`, {
       method: 'POST',
-      body: JSON.stringify({ action, reason })
+      body: JSON.stringify({
+        action,
+        reason: action === 'reject' ? reasonOrMessage : undefined,
+        message: action === 'needs_info' ? reasonOrMessage : undefined
+      })
+    });
+  },
+
+  async toggleFoundingMember(userId: string, isFoundingMember?: boolean, reason?: string) {
+    return request<{ success: boolean; user: any }>(`/api/admin/users/${encodeURIComponent(userId)}/founding-member`, {
+      method: 'POST',
+      body: JSON.stringify({ isFoundingMember, reason })
+    });
+  },
+
+  async evaluateFoundingMembers() {
+    return request<{ success: boolean; grantedCount: number; totalUsers: number }>('/api/admin/founding-member/evaluate', {
+      method: 'POST'
     });
   },
 
   // Communities & Posts
+  async getCommunityCreationStatus() {
+    return request<{
+      canCreate: boolean;
+      isOwnerExempt: boolean;
+      remainingSeconds: number;
+      cooldownEndsAt: string | null;
+      cooldownHours: number;
+    }>('/api/communities/creation-status');
+  },
+
   async getCommunities() {
     return request<{ communities: Community[] }>('/api/communities');
   },
@@ -483,17 +566,37 @@ export const api = {
     return request<{ community: Community }>(`/api/communities/${encodeURIComponent(id)}`);
   },
 
-  async createCommunity(data: { name: string; description?: string; avatar?: string; banner?: string; category?: string; collectionId?: string; socialLinks?: any }) {
+  async createCommunity(data: {
+    name: string;
+    handle?: string;
+    description?: string;
+    avatar?: string;
+    banner?: string;
+    category?: string;
+    collectionId?: string;
+    socialLinks?: any;
+    allowMemberPosts?: boolean;
+    postPermissionMode?: 'everyone' | 'leaders_only';
+    postCooldownSeconds?: number;
+    joiningMode?: 'open' | 'invite_only' | 'token_gated';
+    aboutAnimation?: string;
+  }) {
     return request<{ community: Community }>('/api/communities', {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
 
-  async updateCommunity(id: string, data: { name?: string; description?: string; avatar?: string; banner?: string; category?: string; socialLinks?: any; rules?: string[] }) {
+  async updateCommunity(id: string, data: Partial<Community>) {
     return request<{ community: Community; success: boolean }>(`/api/communities/${encodeURIComponent(id)}`, {
       method: 'PUT',
       body: JSON.stringify(data)
+    });
+  },
+
+  async deleteCommunity(id: string) {
+    return request<{ success: boolean; deletedCommunityId: string }>(`/api/communities/${encodeURIComponent(id)}`, {
+      method: 'DELETE'
     });
   },
 
@@ -502,13 +605,13 @@ export const api = {
   },
 
   async joinCommunity(id: string) {
-    return request<{ community: Community; success: boolean }>(`/api/communities/${encodeURIComponent(id)}/join`, {
+    return request<{ success: boolean; isJoined: boolean; memberCount: number }>(`/api/communities/${encodeURIComponent(id)}/join`, {
       method: 'POST'
     });
   },
 
   async leaveCommunity(id: string) {
-    return request<{ community: Community; success: boolean }>(`/api/communities/${encodeURIComponent(id)}/leave`, {
+    return request<{ success: boolean; isJoined: boolean; memberCount: number }>(`/api/communities/${encodeURIComponent(id)}/leave`, {
       method: 'POST'
     });
   },
@@ -526,19 +629,130 @@ export const api = {
     });
   },
 
-  async getFeedPosts(params?: { communityId?: string; authorId?: string; tab?: string }) {
+  // Community Roles API
+  async createCommunityRole(communityId: string, roleData: any) {
+    return request<{ role: CommunityRole; roles: CommunityRole[]; success: boolean }>(`/api/communities/${encodeURIComponent(communityId)}/roles`, {
+      method: 'POST',
+      body: JSON.stringify(roleData)
+    });
+  },
+
+  async deleteCommunityRole(communityId: string, roleId: string) {
+    return request<{ success: boolean; roles: CommunityRole[] }>(`/api/communities/${encodeURIComponent(communityId)}/roles/${encodeURIComponent(roleId)}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async assignCommunityRole(communityId: string, userId: string, roleId: string, assigned: boolean) {
+    return request<{ success: boolean; member: CommunityMember }>(`/api/communities/${encodeURIComponent(communityId)}/roles/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, roleId, assigned })
+    });
+  },
+
+  // Community Spaces API
+  async createCommunitySpace(communityId: string, spaceData: any) {
+    return request<{ space: CommunitySpace; spaces: CommunitySpace[]; success: boolean }>(`/api/communities/${encodeURIComponent(communityId)}/spaces`, {
+      method: 'POST',
+      body: JSON.stringify(spaceData)
+    });
+  },
+
+  async deleteCommunitySpace(communityId: string, spaceId: string) {
+    return request<{ success: boolean; spaces: CommunitySpace[] }>(`/api/communities/${encodeURIComponent(communityId)}/spaces/${encodeURIComponent(spaceId)}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async getFeedPosts(params?: { communityId?: string; spaceId?: string; authorId?: string; tab?: string }) {
     const query = new URLSearchParams();
     if (params?.communityId) query.set('communityId', params.communityId);
+    if (params?.spaceId) query.set('spaceId', params.spaceId);
     if (params?.authorId) query.set('authorId', params.authorId);
     if (params?.tab) query.set('tab', params.tab);
     const qs = query.toString() ? `?${query.toString()}` : '';
-    return request<{ posts: CommunityPost[] }>(`/api/communities/feed/posts${qs}`);
+    return request<{ posts: CommunityPost[] }>(`/api/feed/posts${qs}`);
   },
 
-  async createPost(data: { content: string; communityId?: string; mediaUrl?: string; nftId?: string }) {
-    return request<{ post: CommunityPost }>('/api/communities/posts', {
+  async createPost(data: {
+    content: string;
+    communityId?: string;
+    spaceId?: string;
+    mediaUrl?: string;
+    links?: string[];
+    poll?: { question: string; options: string[] };
+    shareToHome?: boolean;
+    nftId?: string;
+  }) {
+    return request<{ post: CommunityPost }>('/api/posts', {
       method: 'POST',
       body: JSON.stringify(data)
     });
+  },
+
+  async deletePost(postId: string) {
+    return request<{ success: boolean; deletedPostId: string }>(`/api/posts/${encodeURIComponent(postId)}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async pinPost(postId: string, pinned?: boolean) {
+    return request<{ success: boolean; post: CommunityPost }>(`/api/posts/${encodeURIComponent(postId)}/pin`, {
+      method: 'PUT',
+      body: JSON.stringify({ pinned })
+    });
+  },
+
+  async votePoll(postId: string, optionId: string) {
+    return request<{ success: boolean; poll: PostPoll; userVotedOptionId: string }>(`/api/posts/${encodeURIComponent(postId)}/poll/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ optionId })
+    });
+  },
+
+  // Post Comments & Replies
+  async getPostComments(postId: string) {
+    return request<{ comments: any[]; totalCount: number; postAuthorId: string }>(`/api/posts/${encodeURIComponent(postId)}/comments`);
+  },
+
+  async createPostComment(postId: string, data: { content: string; parentId?: string }) {
+    return request<{ comment: any }>(`/api/posts/${encodeURIComponent(postId)}/comments`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async deletePostComment(commentId: string) {
+    return request<{ success: boolean; deletedCommentId: string; deletedCount: number }>(`/api/posts/comments/${encodeURIComponent(commentId)}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async updatePost(postId: string, data: {
+    content?: string;
+    replyPermission?: 'everyone' | 'following' | 'mentioned' | 'none';
+    visibility?: 'public' | 'followers' | 'private';
+    isPinnedToProfile?: boolean;
+  }) {
+    return request<{ success: boolean; post: CommunityPost }>(`/api/posts/${encodeURIComponent(postId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async followUser(userId: string) {
+    return request<{ success: boolean; isFollowing: boolean }>(`/api/users/${encodeURIComponent(userId)}/follow`, {
+      method: 'POST'
+    });
+  },
+
+  async unfollowUser(userId: string) {
+    return request<{ success: boolean; isFollowing: boolean }>(`/api/users/${encodeURIComponent(userId)}/unfollow`, {
+      method: 'POST'
+    });
+  },
+
+  async getMyFollowingIds() {
+    return request<{ followingIds: string[] }>('/api/users/following/mine');
   }
 };

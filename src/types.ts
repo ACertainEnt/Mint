@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'creator' | 'collector';
+export type UserRole = 'owner' | 'admin' | 'creator' | 'collector';
 
 export interface UserEntitlement {
   tier: 'free' | 'pro' | 'unlimited';
@@ -17,6 +17,9 @@ export interface User {
   walletAddress?: string;
   role: UserRole;
   isVerified: boolean;
+  isFoundingMember?: boolean;
+  foundingMemberGrantedAt?: string;
+  foundingMemberReason?: string;
   plan?: 'free' | 'pro' | 'unlimited' | 'enterprise';
   bot_unlimited?: boolean;
   bot_usage_limit?: number;
@@ -29,6 +32,8 @@ export interface User {
   };
   createdAt: string;
   profileCompleted: boolean;
+  authProvider?: 'google' | 'apple' | 'github' | 'x' | 'twitter' | 'wallet' | 'email' | string;
+  lastUsernameChangedAt?: string;
 }
 
 export interface NFTCollection {
@@ -227,7 +232,7 @@ export interface ActivityEvent {
 export interface LikeRecord {
   id: string;
   userId: string;
-  targetType: 'nft' | 'collection' | 'auction' | 'post' | 'bounty';
+  targetType: 'nft' | 'collection' | 'auction' | 'post' | 'bounty' | 'comment';
   targetId: string;
   createdAt: string;
 }
@@ -237,6 +242,88 @@ export interface FollowRecord {
   followerId: string;
   followingId: string;
   createdAt: string;
+}
+
+export type RoleFontStyle = 
+  | 'default' // Clean Sans
+  | 'modern' // Geometric Modern
+  | 'comic' // Comic / Playful
+  | 'cooper' // Cooper Black / Heavy Rounded
+  | 'memphis' // Memphis / Retro Slab
+  | 'serif' // Editorial Serif
+  | 'monospace' // Code / Tech Mono
+  | 'display' // Heavy Display / Impact
+  | 'handwritten' // Script / Brush
+  | 'pixel'; // 8-bit Pixel
+
+export type RoleAnimation = 
+  | 'none'
+  | 'fade'
+  | 'pulse'
+  | 'shimmer'
+  | 'slide'
+  | 'typewriter'
+  | 'glow'
+  | 'float'
+  | 'color_shift';
+
+export interface RolePermissions {
+  canManageCommunity?: boolean;
+  canManageRoles?: boolean;
+  canManageSpaces?: boolean;
+  canModerateMembers?: boolean;
+  canDeletePosts?: boolean;
+  canPinPosts?: boolean;
+  canPostContent?: boolean;
+  canCreatePolls?: boolean;
+}
+
+export interface CommunityRole {
+  id: string;
+  communityId: string;
+  name: string;
+  description?: string;
+  color: string; // Orange #ff5500 default
+  fontStyle: RoleFontStyle;
+  icon?: string;
+  badgeUrl?: string; // SVG or uploaded image badge URL
+  badgeType?: 'svg' | 'image' | 'icon';
+  animation?: RoleAnimation; // Only for eligible verified/upgraded/owner accounts
+  permissions: RolePermissions;
+  isSystemPreset?: boolean;
+  priority?: number;
+  memberCount?: number;
+  createdAt: string;
+}
+
+export interface CommunitySpace {
+  id: string;
+  communityId: string;
+  name: string; // e.g., "General", "NFT Drops", "Artwork" (No # prefixes)
+  slug: string;
+  description?: string;
+  icon?: string;
+  isDefault?: boolean;
+  order: number;
+  postCount?: number;
+  createdAt: string;
+}
+
+export interface PostPollOption {
+  id: string;
+  text: string;
+  votes: number;
+  voterIds?: string[];
+}
+
+export interface PostPoll {
+  id: string;
+  question: string;
+  options: PostPollOption[];
+  totalVotes: number;
+  userVotedOptionId?: string;
+  expiresAt?: string;
+  isClosed?: boolean;
 }
 
 export interface CommunityMember {
@@ -251,13 +338,18 @@ export interface CommunityMember {
     isVerified: boolean;
     role: UserRole;
   };
-  communityRole: 'owner' | 'moderator' | 'member';
+  communityRole: 'owner' | 'moderator' | 'member' | string;
+  customRoles?: CommunityRole[];
+  assignedRoleIds?: string[];
+  activeBadgeUrl?: string;
+  activeBadgeRoleName?: string;
   joinedAt: string;
 }
 
 export interface Community {
   id: string;
   name: string;
+  handle: string; // @uniquehandle
   slug: string;
   description: string;
   avatar: string;
@@ -272,7 +364,18 @@ export interface Community {
   createdAt: string;
   rules?: string[];
   isJoined?: boolean;
-  userRoleInCommunity?: 'owner' | 'moderator' | 'member' | null;
+  userRoleInCommunity?: 'owner' | 'moderator' | 'member' | string | null;
+  assignedRoles?: CommunityRole[];
+  notificationPreference?: 'all' | 'highlights' | 'muted';
+  joiningMode?: 'open' | 'approval' | 'invite';
+  allowMemberPosts?: boolean; // Setting: Members can post/talk (default true)
+  allowMemberPolls?: boolean; // Setting: Poll creation allowed (requires creator permission)
+  postPermissionMode?: 'everyone' | 'approved' | 'leaders_only';
+  postCooldownSeconds?: number; // Owner-controlled post cooldown (0 = off, 15s, 30s, 60s, 300s)
+  aboutAnimation?: RoleAnimation; // Subtle animation for eligible communities
+  spaces?: CommunitySpace[];
+  roles?: CommunityRole[];
+  customLinks?: { title: string; url: string; icon?: string }[];
   socialLinks?: {
     website?: string;
     twitter?: string;
@@ -285,19 +388,55 @@ export interface CommunityPost {
   id: string;
   communityId?: string;
   communityName?: string;
+  spaceId?: string; // Optional space
+  spaceName?: string;
   authorId: string;
   authorUsername: string;
   authorDisplayName: string;
   authorAvatar: string;
   authorVerified?: boolean;
+  authorCommunityRole?: CommunityRole;
+  authorCommunityBadge?: string;
   content: string;
   mediaUrl?: string;
+  mediaType?: 'image' | 'video' | 'gif';
+  links?: string[];
+  poll?: PostPoll;
   nftId?: string;
   nft?: NFT;
+  isPinned?: boolean;
+  shareToHome?: boolean; // false by default
   likes: number;
   commentCount: number;
   createdAt: string;
   likedByMe?: boolean;
+  editedAt?: string;
+  replyPermission?: 'everyone' | 'following' | 'mentioned' | 'none';
+  visibility?: 'public' | 'followers' | 'private';
+  isPinnedToProfile?: boolean;
+  viewCount?: number;
+  isBookmarked?: boolean;
+  contentDisclosure?: string;
+  isCreator?: boolean;
+}
+
+export interface PostComment {
+  id: string;
+  postId: string;
+  parentId?: string; // If this is a reply to another comment
+  authorId: string;
+  authorUsername: string;
+  authorDisplayName: string;
+  authorAvatar: string;
+  authorVerified?: boolean;
+  authorCommunityRole?: CommunityRole;
+  authorCommunityBadge?: string;
+  content: string;
+  likes: number;
+  likedByMe?: boolean;
+  createdAt: string;
+  replyCount?: number;
+  replies?: PostComment[];
 }
 
 export interface Notification {
@@ -305,14 +444,14 @@ export interface Notification {
   userId: string;
   title: string;
   message: string;
-  type: 'like' | 'follow' | 'sale' | 'bid' | 'outbid' | 'auction_won' | 'bounty_submission' | 'bounty_completed' | 'system';
+  type: 'like' | 'follow' | 'sale' | 'bid' | 'outbid' | 'auction_won' | 'bounty_submission' | 'bounty_completed' | 'comment' | 'reply' | 'system';
   read: boolean;
   link?: string;
   timestamp: string;
   actorId?: string;
   actorUsername?: string;
   actorAvatar?: string;
-  targetType?: 'nft' | 'collection' | 'auction' | 'post' | 'bounty';
+  targetType?: 'nft' | 'collection' | 'auction' | 'post' | 'bounty' | 'comment';
   targetId?: string;
 }
 
@@ -324,6 +463,16 @@ export interface MintBotConfig {
   defaultNetwork: string;
 }
 
+export interface FoundingPeriodConfig {
+  enabled: boolean;
+  startDate: string;
+  endDate: string;
+  minPostsCount?: number;
+  minActiveDays?: number;
+  minInteractions?: number;
+  autoGrantOnMeetingCriteria?: boolean;
+}
+
 export interface VerificationRuleConfig {
   minAccountAgeDays: number;
   minCreatedNfts: number;
@@ -331,16 +480,55 @@ export interface VerificationRuleConfig {
   maxVerifiedCommunitiesPerUser: number;
   adminMultiCommunityAllowed: boolean;
   cooldownDays: number;
+  allowedCategories?: string[];
+  requireEvidenceLinks?: boolean;
+  aiAssistanceEnabled?: boolean;
+  foundingConfig?: FoundingPeriodConfig;
 }
+
+export type VerificationCategory =
+  | 'Creator'
+  | 'Artist'
+  | 'Collector'
+  | 'Community Leader'
+  | 'Builder'
+  | 'Public Figure'
+  | 'Founder'
+  | 'Other';
 
 export type VerificationStatus =
   | 'not_eligible'
   | 'eligible'
   | 'request_available'
+  | 'pending'
   | 'under_review'
   | 'approved'
   | 'rejected'
+  | 'needs_info'
   | 'cooldown';
+
+export interface VerificationEvidence {
+  links: string[];
+  documents: string[];
+  notes?: string;
+}
+
+export interface VerificationReviewHistory {
+  id: string;
+  action: 'submitted' | 'approved' | 'rejected' | 'requested_info' | 'provided_info';
+  actorId: string;
+  actorName?: string;
+  timestamp: string;
+  note?: string;
+}
+
+export interface VerificationAiAssessment {
+  likelihood: 'low' | 'medium' | 'high';
+  score?: number;
+  label: string;
+  disclaimer: string;
+  notes?: string;
+}
 
 export interface VerificationRequest {
   id: string;
@@ -348,16 +536,36 @@ export interface VerificationRequest {
   username: string;
   userDisplayName: string;
   userAvatar: string;
+  userRole?: string;
+  userCreatedAt?: string;
   entityType: 'user' | 'community';
+  category?: VerificationCategory | string;
   communityId?: string;
   communityName?: string;
-  status: 'under_review' | 'approved' | 'rejected';
+  status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'needs_info';
   justification?: string;
   portfolioUrl?: string;
+  evidence?: VerificationEvidence;
+  additionalEvidence?: {
+    links?: string[];
+    documents?: string[];
+    text?: string;
+    submittedAt: string;
+  }[];
+  adminMessage?: string;
   rejectionReason?: string;
+  aiAssessment?: VerificationAiAssessment;
+  history?: VerificationReviewHistory[];
   submittedAt: string;
   reviewedAt?: string;
   reviewedBy?: string;
+  userSignals?: {
+    accountAgeDays: number;
+    createdNftsCount: number;
+    collectionsCount: number;
+    postsCount: number;
+    communitiesCount: number;
+  };
 }
 
 export interface StoredAccount {
@@ -386,6 +594,7 @@ export interface PlatformConfig {
   treasuryAddress: string;
   network: 'devnet' | 'mainnet-beta';
   rpcEndpoint: string;
+  communityCreationCooldownHours?: number; // default 10 hours for normal users
   mintBotConfig?: MintBotConfig;
   launchConfig?: LaunchPlatformConfig;
   verificationConfig?: VerificationRuleConfig;

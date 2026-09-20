@@ -9,7 +9,7 @@
       "banner": "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=1200&auto=format&fit=crop&q=80",
       "bio": "Genesis creator & protocol architect. Curator of organic geometric artifacts on Solana.",
       "walletAddress": "ACEp1aTfX7h8Kq3w9uV4y2z5L1m6NoP8qRsTuVwXyZ",
-      "role": "admin",
+      "role": "owner",
       "isVerified": true,
       "plan": "unlimited",
       "bot_unlimited": true,
@@ -36,7 +36,7 @@
       "bio": "Pioneering generative voxel & 3D Solana aesthetics. Verified creator.",
       "walletAddress": "Krom9x87Hq6tLm2P4vSw5rYz8bAcD1eFgHiJkLmNoP",
       "role": "creator",
-      "isVerified": true,
+      "isVerified": false,
       "socialLinks": {
         "twitter": "https://x.com/kroma_studios"
       },
@@ -569,6 +569,15 @@
   ],
   "notifications": [
     {
+      "id": "notif_1789650763433_vcomdec",
+      "userId": "usr_ace_admin",
+      "title": "Community Verified",
+      "message": "Your community \"mint Official\" has been granted verified community status.",
+      "type": "system",
+      "read": true,
+      "timestamp": "2026-09-17T13:12:43.433Z"
+    },
+    {
       "id": "notif_1789569070526_buyer",
       "userId": "usr_ace_admin",
       "title": "NFT Purchased!",
@@ -619,10 +628,152 @@
         "SOL",
         "USDC"
       ]
-    }
+    },
+    "verificationConfig": {
+      "minAccountAgeDays": 0,
+      "minCreatedNfts": 1,
+      "minSolVolume": 0.1,
+      "maxVerifiedCommunitiesPerUser": 1,
+      "adminMultiCommunityAllowed": true,
+      "cooldownDays": 7
+    },
+    "maxBioLength": 160,
+    "maxAccountsPerDevice": 3,
+    "communityCreationCooldownHours": 10
   },
   "userPasswords": {
     "usr_ace_admin": "$2b$10$gLnfJz193NMean38vObzZ.c4OegNcs/gnRqp0Dt9tv2WoFKkyCgQC",
     "usr_sol_artisan": "$2b$10$w6ztNNHta7mYEyeVozy1uOnD9f7ZczHeZL/L/OPFWcYJ2UQGB6sAK"
-  }
+  },
+  "likes": [
+    {
+      "id": "like_1789651826062_01ljp",
+      "userId": "usr_ace_admin",
+      "targetType": "comment",
+      "targetId": "cmt_1789651826037_8loi",
+      "createdAt": "2026-09-17T13:30:26.062Z"
+    }
+  ],
+  "posts": [
+    {
+      "id": "post_1789651789275_5mf8",
+      "authorId": "usr_ace_admin",
+      "authorUsername": "Ace",
+      "authorDisplayName": "A Certain Ent",
+      "authorAvatar": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=240&auto=format&fit=crop&q=80",
+      "authorVerified": true,
+      "content": "Protocol update #1: Testing comments and replies engine.",
+      "likes": 0,
+      "commentCount": 2,
+      "createdAt": "2026-09-17T13:29:49.275Z"
+    },
+    {
+      "id": "post_1789650815778_nzjo",
+      "communityId": "com_1789648280638_xm44",
+      "communityName": "mint Official",
+      "authorId": "usr_ace_admin",
+      "authorUsername": "Ace",
+      "authorDisplayName": "A Certain Ent",
+      "authorAvatar": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=240&auto=format&fit=crop&q=80",
+      "authorVerified": true,
+      "content": "hi",
+      "likes": 0,
+      "commentCount": 0,
+      "createdAt": "2026-09-17T13:13:35.778Z"
+    },
+    {
+      "id": "post_1789648216098_9q37",
+      "authorId": "usr_ace_admin",
+      "authorUsername": "Ace",
+      "authorDisplayName": "A Certain Ent",
+      "authorAvatar": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=240&auto=format&fit=crop&q=80",
+      "authorVerified": true,
+      "content": "hi",
+      "likes": 0,
+      "commentCount": 0,
+      "createdAt": "2026-09-17T12:30:16.099Z"
+    }
+  ],
+  "communities": [
+    {
+      "id": "com_1789648280638_xm44",
+      "name": "mint Official",
+      "slug": "mint-official",
+      "description": "mint",
+      "avatar": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=240&auto=format&fit=crop&q=80",
+      "banner": "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=1200&auto=format&fit=crop&q=80",
+      "creatorId": "usr_ace_admin",
+      "creatorUsername": "Ace",
+      "memberCount": 1,
+      "postCount": 1,
+      "isVerified": true,
+      "category": "Art",
+      "createdAt": "2026-09-17T12:31:20.638Z",
+      "socialLinks": {},
+      "rules": []
+    }
+  ],
+  "communityMembers": [
+    {
+      "id": "cm_1789648280638_5cg6",
+      "communityId": "com_1789648280638_xm44",
+      "userId": "usr_ace_admin",
+      "user": {
+        "id": "usr_ace_admin",
+        "username": "Ace",
+        "displayName": "A Certain Ent",
+        "avatar": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=240&auto=format&fit=crop&q=80",
+        "isVerified": true,
+        "role": "admin"
+      },
+      "communityRole": "owner",
+      "joinedAt": "2026-09-17T12:31:20.638Z"
+    }
+  ],
+  "follows": [],
+  "verificationRequests": [
+    {
+      "id": "vreq_1789650751711_com_vauo",
+      "userId": "usr_ace_admin",
+      "username": "Ace",
+      "userDisplayName": "A Certain Ent",
+      "userAvatar": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=240&auto=format&fit=crop&q=80",
+      "entityType": "community",
+      "communityId": "com_1789648280638_xm44",
+      "communityName": "mint Official",
+      "status": "approved",
+      "justification": "hhh",
+      "submittedAt": "2026-09-17T13:12:31.711Z",
+      "reviewedAt": "2026-09-17T13:12:43.433Z",
+      "reviewedBy": "Ace"
+    }
+  ],
+  "comments": [
+    {
+      "id": "cmt_1789651789281_qibh",
+      "postId": "post_1789651789275_5mf8",
+      "authorId": "usr_ace_admin",
+      "authorUsername": "Ace",
+      "authorDisplayName": "A Certain Ent",
+      "authorAvatar": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=240&auto=format&fit=crop&q=80",
+      "authorVerified": true,
+      "content": "First top-level comment on post!",
+      "likes": 0,
+      "likedByMe": false,
+      "createdAt": "2026-09-17T13:29:49.281Z"
+    },
+    {
+      "id": "cmt_1789651789287_ehq7",
+      "postId": "post_1789651789275_5mf8",
+      "authorId": "usr_ace_admin",
+      "authorUsername": "Ace",
+      "authorDisplayName": "A Certain Ent",
+      "authorAvatar": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=240&auto=format&fit=crop&q=80",
+      "authorVerified": true,
+      "content": "Threaded reply to the first comment.",
+      "likes": 0,
+      "likedByMe": false,
+      "createdAt": "2026-09-17T13:29:49.288Z"
+    }
+  ]
 }

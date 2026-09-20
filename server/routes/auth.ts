@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { db } from '../db';
 import { User } from '../../src/types';
 import { AuthenticatedRequest, requireAuth } from '../middleware/auth';
+import { validateUsernameAvailability, isPlatformOwner } from '../utils/usernameProtection';
 
 export const authRouter = Router();
 
@@ -46,32 +47,36 @@ authRouter.post('/wallet-login', async (req, res) => {
   // Find existing user by wallet address
   let user = database.users.find(u => u.walletAddress?.toLowerCase() === walletAddress.toLowerCase());
 
-  let isNewUser = false;
   if (!user) {
-    // If this wallet belongs to none, create pending onboarding profile
+    // If this wallet belongs to none, create auto-completed profile with random username and avatar
     const newId = `usr_${crypto.randomBytes(8).toString('hex')}`;
     const shortAddr = `${walletAddress.slice(0, 4)}..${walletAddress.slice(-4)}`;
+    const randomHex = crypto.randomBytes(3).toString('hex');
     user = {
       id: newId,
-      username: `user_${shortAddr.toLowerCase()}`,
+      username: `sol_${walletAddress.slice(0, 4).toLowerCase()}_${randomHex}`,
       displayName: `Solana Collector ${shortAddr}`,
       avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${walletAddress}&backgroundColor=0d0f14`,
       walletAddress,
       role: 'collector',
       isVerified: false,
       createdAt: new Date().toISOString(),
-      profileCompleted: false
+      profileCompleted: true,
+      authProvider: 'wallet'
     };
     database.users.push(user);
     db.save(database);
-    isNewUser = true;
+  } else if (!user.authProvider) {
+    user.authProvider = 'wallet';
+    user.profileCompleted = true;
+    db.save(database);
   }
 
   const token = `${user.id}:${Date.now()}`;
   res.json({
     token,
     user,
-    isNewUser: !user.profileCompleted
+    isNewUser: false
   });
 });
 
@@ -87,7 +92,6 @@ authRouter.post('/provider-login', (req, res) => {
   // Check if user exists by email
   let user = database.users.find(u => u.email && u.email.toLowerCase() === email?.toLowerCase());
 
-  let isNewUser = false;
   if (!user) {
     // If pervercy23@gmail.com logs in, ensure it is the admin user
     if (email?.toLowerCase() === 'pervercy23@gmail.com') {
@@ -100,7 +104,9 @@ authRouter.post('/provider-login', (req, res) => {
 
   if (!user) {
     const newId = `usr_${crypto.randomBytes(8).toString('hex')}`;
-    const defaultUsername = email ? email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '') : `user_${crypto.randomBytes(4).toString('hex')}`;
+    const basePrefix = email ? email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').slice(0, 10) : 'user';
+    const randomHex = crypto.randomBytes(3).toString('hex');
+    const defaultUsername = `${basePrefix}_${randomHex}`;
     
     user = {
       id: newId,
@@ -111,18 +117,24 @@ authRouter.post('/provider-login', (req, res) => {
       role: 'collector',
       isVerified: false,
       createdAt: new Date().toISOString(),
-      profileCompleted: false
+      profileCompleted: true,
+      authProvider: (provider || 'google').toLowerCase()
     };
     database.users.push(user);
     db.save(database);
-    isNewUser = true;
+  } else {
+    // Ensure authProvider is saved
+    if (provider && (!user.authProvider || user.authProvider === 'email')) {
+      user.authProvider = provider.toLowerCase();
+      db.save(database);
+    }
   }
 
   const token = `${user.id}:${Date.now()}`;
   res.json({
     token,
     user,
-    isNewUser: !user.profileCompleted
+    isNewUser: false
   });
 });
 
@@ -144,19 +156,17 @@ authRouter.post('/register', (req, res) => {
     return res.status(400).json({ error: 'An account with this email already exists' });
   }
 
-  // Check username if provided
-  if (username) {
-    const cleanUsername = username.replace(/^@/, '');
-    if (!/^[a-zA-Z0-9_]{3,20}$/.test(cleanUsername)) {
-      return res.status(400).json({ error: 'Username must be 3-20 alphanumeric characters or underscores' });
-    }
-    if (database.users.some(u => u.username.toLowerCase() === cleanUsername.toLowerCase())) {
-      return res.status(400).json({ error: 'Username is already taken' });
-    }
+  // Check username if provided or derive from email
+  const requestedUsername = username ? username.replace(/^@/, '') : email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '');
+  const usernameCheck = validateUsernameAvailability(requestedUsername, undefined, null, database.users);
+  
+  if (!usernameCheck.available) {
+    return res.status(400).json({ error: usernameCheck.message, code: usernameCheck.code });
   }
 
+  const cleanUsername = usernameCheck.normalized;
+
   const newId = `usr_${crypto.randomBytes(8).toString('hex')}`;
-  const cleanUsername = username ? username.replace(/^@/, '') : email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '');
 
   const newUser: User = {
     id: newId,
@@ -315,19 +325,45 @@ authRouter.put('/profile', requireAuth, (req: AuthenticatedRequest, res) => {
 
   // Username validation if changed
   let updatedUsername = existing.username;
+  let lastUsernameChangedAt = existing.lastUsernameChangedAt;
   if (username !== undefined && typeof username === 'string') {
     const cleanUsername = username.replace(/^@/, '').trim();
-    if (cleanUsername !== existing.username) {
-      if (!/^[a-zA-Z0-9_]{3,20}$/.test(cleanUsername)) {
-        return res.status(400).json({ error: 'Username must be 3-20 alphanumeric characters or underscores' });
+    if (cleanUsername.toLowerCase() !== existing.username.toLowerCase()) {
+      // Check admin override exception for pervercy23@gmail.com
+      const isExempt = existing.email?.toLowerCase() === 'pervercy23@gmail.com' ||
+                       req.user?.email?.toLowerCase() === 'pervercy23@gmail.com' ||
+                       existing.id === 'usr_ace_admin' ||
+                       req.user?.id === 'usr_ace_admin' ||
+                       existing.role === 'owner' ||
+                       req.user?.role === 'owner';
+
+      if (!isExempt && existing.lastUsernameChangedAt) {
+        const elapsed = Date.now() - new Date(existing.lastUsernameChangedAt).getTime();
+        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+        if (elapsed < sevenDaysMs) {
+          const remainingMs = sevenDaysMs - elapsed;
+          const remainingDays = Math.floor(remainingMs / (24 * 60 * 60 * 1000));
+          const remainingHours = Math.ceil((remainingMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+          const timeMsg = remainingDays > 0
+            ? `${remainingDays}d ${remainingHours}h`
+            : `${remainingHours}h`;
+          return res.status(400).json({
+            error: `Username can only be changed once every 7 days. Cooldown remaining: ${timeMsg}.`
+          });
+        }
       }
-      const duplicate = database.users.find(
-        u => u.username.toLowerCase() === cleanUsername.toLowerCase() && u.id !== existing.id
+
+      const usernameCheck = validateUsernameAvailability(
+        cleanUsername,
+        existing.id,
+        req.user,
+        database.users
       );
-      if (duplicate) {
-        return res.status(400).json({ error: 'Username is already taken by another account' });
+      if (!usernameCheck.available) {
+        return res.status(400).json({ error: usernameCheck.message, code: usernameCheck.code });
       }
-      updatedUsername = cleanUsername;
+      updatedUsername = usernameCheck.normalized;
+      lastUsernameChangedAt = new Date().toISOString();
     }
   }
 
@@ -340,7 +376,8 @@ authRouter.put('/profile', requireAuth, (req: AuthenticatedRequest, res) => {
     avatar: avatar !== undefined ? avatar : existing.avatar,
     banner: banner !== undefined ? banner : existing.banner,
     walletAddress: walletAddress !== undefined ? walletAddress : existing.walletAddress,
-    socialLinks: socialLinks !== undefined ? socialLinks : existing.socialLinks
+    socialLinks: socialLinks !== undefined ? socialLinks : existing.socialLinks,
+    lastUsernameChangedAt
   };
 
   db.save(database);

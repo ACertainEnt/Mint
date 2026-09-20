@@ -28,7 +28,7 @@ likesRouter.post('/toggle', requireAuth, (req: AuthenticatedRequest, res) => {
     return res.status(400).json({ error: 'targetType and targetId are required' });
   }
 
-  const validTypes = ['nft', 'collection', 'auction', 'post', 'bounty'];
+  const validTypes = ['nft', 'collection', 'auction', 'post', 'bounty', 'comment'];
   if (!validTypes.includes(targetType)) {
     return res.status(400).json({ error: `targetType must be one of: ${validTypes.join(', ')}` });
   }
@@ -167,6 +167,31 @@ likesRouter.post('/toggle', requireAuth, (req: AuthenticatedRequest, res) => {
       };
       database.likes.push(newLike);
       currentLikes = database.likes.filter(l => l.targetId === targetId).length;
+    }
+  } else if (targetType === 'comment') {
+    const comment = (database.comments || []).find(c => c.id === targetId);
+    if (!comment) return res.status(404).json({ error: 'Comment not found' });
+    targetOwnerId = comment.authorId;
+    targetTitle = 'comment';
+    targetLink = `/posts/${comment.postId}`;
+
+    if (existingIndex >= 0) {
+      database.likes.splice(existingIndex, 1);
+      comment.likes = Math.max(0, (comment.likes || 1) - 1);
+      currentLikes = comment.likes;
+      db.save(database);
+      return res.json({ liked: false, likes: currentLikes });
+    } else {
+      const newLike: LikeRecord = {
+        id: `like_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        userId: user.id,
+        targetType: 'comment',
+        targetId,
+        createdAt: new Date().toISOString()
+      };
+      database.likes.push(newLike);
+      comment.likes = (comment.likes || 0) + 1;
+      currentLikes = comment.likes;
     }
   }
 
