@@ -262,7 +262,7 @@ usersRouter.post('/verification/request', requireAuth, (req: AuthenticatedReques
     entityType: 'user',
     category: category || 'Creator',
     status: 'pending',
-    justification: justification?.trim() || 'Creator verification request for Solana identity.',
+    justification: justification?.trim() || 'Creator verification request for Algorand identity.',
     portfolioUrl: portfolioUrl?.trim() || evidenceLinks[0] || undefined,
     evidence: {
       links: evidenceLinks,
@@ -442,7 +442,7 @@ usersRouter.get('/:identifier/portfolio', (req: AuthenticatedRequest, res) => {
     user = {
       id: `usr_${clean ? clean.replace(/[^a-zA-Z0-9_]/g, '') : 'guest'}`,
       username: clean || 'collector',
-      displayName: clean.length > 10 ? `${clean.slice(0, 4)}..${clean.slice(-4)}` : (clean || 'Solana Collector'),
+      displayName: clean.length > 10 ? `${clean.slice(0, 4)}..${clean.slice(-4)}` : (clean || 'Algorand Collector'),
       avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${clean || 'guest'}&backgroundColor=0d0f14`,
       walletAddress: clean.length >= 30 ? clean : undefined,
       role: 'collector',

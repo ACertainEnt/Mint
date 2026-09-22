@@ -7,6 +7,16 @@ interface EditProfileModalProps {
   onClose: () => void;
 }
 
+const USERNAME_COLOR_PALETTE = [
+  { label: 'MINT Orange', value: '#ff5500' },
+  { label: 'MINT Peach', value: '#ff8c4d' },
+  { label: 'Algorand Emerald', value: '#00FFA3' },
+  { label: 'Algorand Purple', value: '#DC1FFF' },
+  { label: 'Sky Blue', value: '#38bdf8' },
+  { label: 'Gold Amber', value: '#fbbf24' },
+  { label: 'Default', value: '' }
+];
+
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) => {
   const { user, updateProfile } = useAuth();
 
@@ -15,6 +25,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
   const [bio, setBio] = useState(user?.bio || '');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatar || null);
   const [bannerUrl, setBannerUrl] = useState<string | null>(user?.banner || null);
+  const [usernameColor, setUsernameColor] = useState<string>(user?.usernameColor || '');
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,11 +39,23 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     code?: string;
   } | null>(null);
 
-  // Cooldown calculation
-  const isAdminExempt =
-    user?.email?.toLowerCase() === 'pervercy23@gmail.com' ||
-    user?.id === 'usr_ace_admin' ||
-    user?.role === 'owner';
+  // Privileged & owner account exemptions
+  const isPrivilegedUser =
+    user?.isPrivileged === true ||
+    user?.privilegedType === 'platform_owner' ||
+    user?.privilegedType === 'trusted_mint_account' ||
+    user?.privilegedType === 'privileged_account' ||
+    user?.role === 'owner' ||
+    user?.role === 'platform_owner' ||
+    user?.role === 'trusted_mint_account' ||
+    user?.role === 'privileged_account';
+
+  const isOwner =
+    user?.role === 'owner' ||
+    user?.role === 'platform_owner' ||
+    user?.privilegedType === 'platform_owner';
+
+  const isAdminExempt = isPrivilegedUser;
 
   let isCooldownActive = false;
   let cooldownTimeText = '';
@@ -55,6 +78,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       setBio(user.bio || '');
       setAvatarUrl(user.avatar || null);
       setBannerUrl(user.banner || null);
+      setUsernameColor(user.usernameColor || '');
       setError(null);
       setSuccess(false);
     }
@@ -71,10 +95,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       return;
     }
 
-    if (cleanUsername.length < 3) {
+    const minLength = isOwner ? 1 : 3;
+    if (cleanUsername.length < minLength) {
       setUsernameStatus({
         available: false,
-        message: 'Must be at least 3 characters'
+        message: isOwner ? 'Must be at least 1 character' : 'Must be at least 3 characters'
       });
       setCheckingUsername(false);
       return;
@@ -100,7 +125,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [username, user]);
+  }, [username, user, isOwner]);
 
   const MAX_BIO_LENGTH = 160;
 
@@ -140,16 +165,15 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         displayName: displayName.trim(),
         bio: bio.trim(),
         avatar: avatarUrl || user.avatar,
-        banner: bannerUrl || undefined
+        banner: bannerUrl || undefined,
+        usernameColor: usernameColor || undefined
       });
       setSuccess(true);
       setTimeout(() => {
-        setSuccess(false);
         onClose();
       }, 700);
     } catch (err: any) {
-      console.error('Update profile error:', err);
-      setError(err.message || 'Failed to save profile changes.');
+      setError(err.message || 'Failed to update profile. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -160,48 +184,39 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      setError('File size must be under 5MB');
+      setError('Image file must be smaller than 5MB');
       return;
     }
 
     const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        const dataUrl = reader.result as string;
-        const res = await api.uploadImage({
-          dataUrl,
-          filename: file.name,
-          mimeType: file.type
-        });
-        if (type === 'avatar') {
-          setAvatarUrl(res.url);
-        } else {
-          setBannerUrl(res.url);
-        }
-      } catch (err: any) {
-        setError(err.message || 'Failed to upload image');
+    reader.onloadend = () => {
+      if (type === 'avatar') {
+        setAvatarUrl(reader.result as string);
+      } else {
+        setBannerUrl(reader.result as string);
       }
     };
     reader.readAsDataURL(file);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in text-left">
-      <div className="relative w-full max-w-lg bg-[#0d0f14] border border-[#212634] rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-lg bg-[#0e1117] border border-[#1f2430] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-[#1b202c] flex items-center justify-between">
-          <h3 className="text-base font-bold text-white">Edit Profile</h3>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1b202c]">
+          <h2 className="text-sm font-bold text-white font-mono-code uppercase tracking-wider">
+            Edit Profile
+          </h2>
           <button
-            type="button"
             onClick={onClose}
-            className="text-xs text-[#8e97a8] hover:text-white px-2 py-1 rounded transition-colors cursor-pointer"
+            className="text-xs font-mono-code text-[#8e97a8] hover:text-white transition-colors cursor-pointer"
           >
-            Close
+            ESC
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSave} className="p-5 space-y-4 overflow-y-auto flex-1 text-left">
+        <form onSubmit={handleSave} className="p-5 space-y-4 overflow-y-auto flex-1 text-left custom-scrollbar">
           {error && (
             <div className="p-3 rounded-xl bg-red-950/40 border border-red-800/60 text-red-300 text-xs">
               {error}
@@ -286,7 +301,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               </label>
               {isAdminExempt ? (
                 <span className="text-[10px] font-mono-code font-bold text-emerald-400">
-                  Admin Override: Unlimited changes
+                  Privileged Override: Unlimited changes
                 </span>
               ) : isCooldownActive ? (
                 <span className="text-[10px] font-mono-code text-amber-400 font-bold">
@@ -334,6 +349,46 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
               </p>
             )}
           </div>
+
+          {/* Username Color Customization (Verified Accounts Only) */}
+          {(user.isVerified || isPrivilegedUser) && (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-mono-code text-[#8e97a8] uppercase">
+                  Username Accent Color
+                </label>
+                <span className="text-[10px] font-mono-code text-[#ff5500] font-bold">
+                  Verified Perk
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                {USERNAME_COLOR_PALETTE.map((c) => {
+                  const isSelected = (usernameColor || '') === c.value;
+                  return (
+                    <button
+                      key={c.label}
+                      type="button"
+                      onClick={() => setUsernameColor(c.value)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono-code transition-all cursor-pointer flex items-center gap-1.5 border ${
+                        isSelected
+                          ? 'border-white/40 bg-white/10 ring-1 ring-white/30'
+                          : 'border-white/5 bg-[#141822] hover:bg-[#1a202d]'
+                      }`}
+                    >
+                      <span
+                        className="w-3 h-3 rounded-full shrink-0 border border-white/20"
+                        style={{ backgroundColor: c.value || '#e2e8f0' }}
+                      />
+                      <span style={{ color: c.value || '#e2e8f0' }}>{c.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-[#6b7280] font-mono-code mt-1.5">
+                Preview: <span style={{ color: usernameColor || '#e2e8f0' }} className="font-bold">@{username || user.username}</span>
+              </p>
+            </div>
+          )}
 
           {/* Bio */}
           <div>

@@ -125,7 +125,7 @@ bountiesRouter.post('/:id/submit', requireAuth, (req: AuthenticatedRequest, res)
     id: `sub_${Date.now()}`,
     submitterId: submitter.id,
     submitterUsername: submitter.username,
-    submitterAddress: submitter.walletAddress || 'Solana_Devnet_Contributor',
+    submitterAddress: submitter.walletAddress || 'Algorand_Testnet_Contributor',
     submitterAvatar: submitter.avatar,
     notes: notes?.trim() || '',
     previewUrl: previewUrl?.trim() || '',

@@ -122,7 +122,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onNav
             <div className="p-4 text-xs text-[#6b7280]">
               <span className="font-semibold text-[#8e97a8]">Popular Quick Searches:</span>
               <div className="flex flex-wrap gap-2 mt-2">
-                {['Ents of Solana', 'Chrono Glyphs', '@Ace', 'Hyper Cubes', 'Artwork Commissions'].map(tag => (
+                {['Ents of Algorand', 'Chrono Glyphs', '@Ace', 'Hyper Cubes', 'Artwork Commissions'].map(tag => (
                   <button
                     key={tag}
                     onClick={() => setQuery(tag.replace('@', ''))}
@@ -155,7 +155,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onNav
                           {col.name} {col.isVerified && <VerifiedBadge size="sm" />}
                         </div>
                         <div className="text-[11px] text-[#6b7280]">
-                          Floor: <span className="text-[#ff5500] font-mono-code">{col.floorPrice || col.mintPrice} SOL</span> • Supply: {col.totalSupply}
+                          Floor: <span className="text-[#ff5500] font-mono-code">{col.floorPrice || col.mintPrice} ALGO</span> • Supply: {col.totalSupply}
                         </div>
                       </div>
                     </div>
@@ -190,7 +190,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onNav
                     </div>
                     <div className="text-right">
                       {nft.price ? (
-                        <span className="text-xs font-mono-code font-bold text-[#ff5500]">{nft.price} SOL</span>
+                        <span className="text-xs font-mono-code font-bold text-[#ff5500]">{nft.price} ALGO</span>
                       ) : nft.isInAuction ? (
                         <span className="text-[10px] font-mono-code text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">AUCTION</span>
                       ) : (
@@ -260,7 +260,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onNav
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs font-mono-code font-bold text-[#ff5500]">{auc.currentBid} SOL</div>
+                      <div className="text-xs font-mono-code font-bold text-[#ff5500]">{auc.currentBid} ALGO</div>
                       <div className="text-[10px] text-[#6b7280]">{auc.bidCount} bids</div>
                     </div>
                   </button>
@@ -289,7 +289,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onNav
                       <div className="text-[11px] text-[#6b7280] capitalize">{b.category.replace('_', ' ')}</div>
                     </div>
                     <span className="text-xs font-mono-code font-bold text-emerald-400">
-                      +{b.reward} SOL
+                      +{b.reward} ALGO
                     </span>
                   </button>
                 ))}

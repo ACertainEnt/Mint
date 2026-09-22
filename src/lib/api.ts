@@ -1,4 +1,4 @@
-import { User, NFTCollection, NFT, Auction, Bounty, ActivityEvent, Notification, PlatformConfig, MintBotQueryResponse, MintBotUsage, MintBotSuggestionGroup, Community, CommunityMember, CommunityPost, CommunityRole, CommunitySpace, PostPoll } from '../types';
+import { User, NFTCollection, NFT, Auction, Bounty, ActivityEvent, Notification, PlatformConfig, MintBotQueryResponse, MintBotUsage, MintBotSuggestionGroup, Community, CommunityMember, CommunityPost, CommunityRole, CommunitySpace, PostPoll, WaitlistEntry, BetaCodeRecord } from '../types';
 
 const TOKEN_KEY = 'mint_auth_token';
 
@@ -370,13 +370,25 @@ export const api = {
     return request<{ config: PlatformConfig }>('/api/config');
   },
 
-  // Solana RPC endpoints
-  async getSolanaBalance(address: string) {
-    return request<{ address: string; sol: number; lamports: number; network: string }>(`/api/solana/balance/${address}`);
+  // Chain & Ledger endpoints
+  async getChainBalance(address: string) {
+    return request<{ address: string; algo: number; balance: number; network: string }>(`/api/chain/balance/${address}`).catch(() => ({
+      address,
+      algo: 0,
+      balance: 0,
+      network: 'testnet'
+    }));
+  },
+
+  async requestAirdrop(address: string) {
+    return request<{ success: boolean; signature: string; algo: number; balance: number }>(`/api/chain/airdrop`, {
+      method: 'POST',
+      body: JSON.stringify({ address })
+    });
   },
 
   async requestDevnetAirdrop(address: string) {
-    return request<{ success: boolean; signature: string; sol: number; explorerUrl: string }>('/api/solana/airdrop', {
+    return request<{ success: boolean; signature: string; algo: number; sol: number; balance: number }>(`/api/chain/airdrop`, {
       method: 'POST',
       body: JSON.stringify({ address })
     });
@@ -430,7 +442,7 @@ export const api = {
   async getMintBotStatus() {
     return request<{
       database: { provider: string; status: string; latency: string };
-      solanaRpc: { endpoint: string; network: string; status: string; latencyMs?: number; slot?: number };
+      algorandRpc?: { endpoint: string; network: string; status: string; latencyMs?: number; round?: number };
       indexingProvider: { isConfigured: boolean; provider: string; message: string };
       aiEngine: { provider: string; status: string; note: string };
     }>('/api/mintbot/status');
@@ -538,6 +550,17 @@ export const api = {
     return request<{ success: boolean; user: any }>(`/api/admin/users/${encodeURIComponent(userId)}/founding-member`, {
       method: 'POST',
       body: JSON.stringify({ isFoundingMember, reason })
+    });
+  },
+
+  async getOAuthConfig() {
+    return request<{ google: boolean; github: boolean; apple: boolean; x: boolean }>('/api/auth/oauth/config');
+  },
+
+  async updateUserPrivilege(userId: string, data: { role?: string; privilegedType?: string | null; isPrivileged?: boolean }) {
+    return request<{ success: boolean; user: any }>('/api/admin/update-user-privilege', {
+      method: 'POST',
+      body: JSON.stringify({ userId, ...data })
     });
   },
 
@@ -754,5 +777,42 @@ export const api = {
 
   async getMyFollowingIds() {
     return request<{ followingIds: string[] }>('/api/users/following/mine');
+  },
+
+  // Waitlist & Beta Access APIs
+  async joinWaitlist(data: { email: string; walletAddress?: string; roleInterest?: string; notes?: string }) {
+    return request<{ success: boolean; message: string; entry: WaitlistEntry; position?: number }>('/api/waitlist', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async getWaitlist() {
+    return request<{ waitlist: WaitlistEntry[]; totalCount: number }>('/api/waitlist');
+  },
+
+  async redeemBetaCode(code: string) {
+    return request<{ success: boolean; message: string; user: User }>('/api/beta/redeem', {
+      method: 'POST',
+      body: JSON.stringify({ code })
+    });
+  },
+
+  async generateBetaCodes(data: { assignedEmail?: string; notes?: string; expiresAt?: string; count?: number }) {
+    return request<{ success: boolean; message: string; codes: BetaCodeRecord[]; code: BetaCodeRecord }>('/api/beta/generate', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async getBetaCodes() {
+    return request<{ codes: BetaCodeRecord[] }>('/api/beta/codes');
+  },
+
+  async revokeBetaCode(codeId: string) {
+    return request<{ success: boolean; message: string; code: BetaCodeRecord }>('/api/beta/revoke', {
+      method: 'POST',
+      body: JSON.stringify({ codeId })
+    });
   }
 };

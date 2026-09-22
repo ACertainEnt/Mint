@@ -83,7 +83,7 @@ export const OnboardingModal: React.FC = () => {
           Claim Your Creator & Collector Handle
         </h2>
         <p className="text-xs text-[#9ca3af] mt-1 mb-6">
-          Every participant in the MINT Solana ecosystem has a unique handle. Choose yours to proceed.
+          Every participant in the MINT Algorand ecosystem has a unique handle. Choose yours to proceed.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -120,7 +120,7 @@ export const OnboardingModal: React.FC = () => {
                 required
                 value={username}
                 onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
-                placeholder="sol_collector"
+                placeholder="algo_collector"
                 maxLength={20}
                 className="w-full bg-[#161a22] border border-[#232938] rounded-lg pl-8 pr-10 py-2.5 text-sm text-white font-mono-code focus:outline-none focus:border-[#ff5500]"
               />
@@ -158,7 +158,7 @@ export const OnboardingModal: React.FC = () => {
                 type="text"
                 value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
-                placeholder="e.g. Anatoly"
+                placeholder="e.g. Silvio"
                 maxLength={40}
                 className="w-full bg-[#161a22] border border-[#232938] rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-[#ff5500]"
               />
@@ -175,7 +175,7 @@ export const OnboardingModal: React.FC = () => {
               <textarea
                 value={bio}
                 onChange={e => setBio(e.target.value)}
-                placeholder="Digital artisan, Solana NFT enthusiast..."
+                placeholder="Digital artisan, Algorand NFT enthusiast..."
                 rows={2}
                 maxLength={160}
                 className="w-full bg-[#161a22] border border-[#232938] rounded-lg pl-9 pr-3 py-2 text-xs text-white resize-none focus:outline-none focus:border-[#ff5500]"

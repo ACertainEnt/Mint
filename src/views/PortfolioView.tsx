@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wallet, Coins, ExternalLink, Copy, Check, Layers, Tag, Gavel, Target, Clock, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Wallet, Coins, ExternalLink, Copy, Check, Layers, Tag, Gavel, Target, Clock, ArrowRight, ShieldCheck, Ticket } from 'lucide-react';
 import { NFT, NFTCollection, Auction, Bounty, ActivityEvent } from '../types';
 import { NFTCard } from '../components/NFTCard';
 import { CollectionCard } from '../components/CollectionCard';
@@ -19,7 +19,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   onSelectCollection,
   onNavigate
 }) => {
-  const { user, setShowAuthModal } = useAuth();
+  const { user, setShowAuthModal, redeemBetaCode } = useAuth();
   const { connected, publicKey, balance, walletName, connect, requestAirdrop } = useWallet();
 
   const [activeTab, setActiveTab] = useState<'owned' | 'listed' | 'collections' | 'bids' | 'bounties' | 'history'>('owned');
@@ -48,6 +48,9 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   const [loading, setLoading] = useState(true);
   const [airdropping, setAirdropping] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [betaInputCode, setBetaInputCode] = useState('');
+  const [redeemingBeta, setRedeemingBeta] = useState(false);
+  const [betaMessage, setBetaMessage] = useState<string | null>(null);
 
   const loadPortfolio = async () => {
     if (!user) {
@@ -88,6 +91,22 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
     }
   };
 
+  const handleRedeemBeta = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!betaInputCode.trim()) return;
+    setRedeemingBeta(true);
+    setBetaMessage(null);
+    try {
+      const msg = await redeemBetaCode(betaInputCode.trim().toUpperCase());
+      setBetaMessage(msg || 'Beta access activated!');
+      setBetaInputCode('');
+    } catch (err: any) {
+      setBetaMessage(err.message || 'Failed to redeem beta code');
+    } finally {
+      setRedeemingBeta(false);
+    }
+  };
+
   if (!user && !connected) {
     return (
       <div className="max-w-md mx-auto py-20 px-4 text-center space-y-4">
@@ -98,7 +117,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           Connect to Access Portfolio
         </h2>
         <p className="text-xs text-[#9ca3af] leading-relaxed">
-          Sign in or connect your Solana wallet to manage owned artifacts, active bids, collections, and on-chain balances.
+          Sign in or connect your Algorand wallet to manage owned artifacts, active bids, collections, and on-chain balances.
         </p>
         <div className="flex justify-center gap-3 pt-2">
           <button
@@ -132,8 +151,13 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-bold text-white">
-                  {user ? user.displayName : 'Solana Portfolio'}
+                <h1 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                  <span>{user ? user.displayName : 'Algorand Portfolio'}</span>
+                  {user?.beta_access && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase font-mono-code bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      Beta Active
+                    </span>
+                  )}
                 </h1>
               </div>
               <div className="flex items-center gap-2 mt-1">
@@ -157,7 +181,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                       {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
                     </button>
                     <a
-                      href={`https://explorer.solana.com/address/${publicKey}?cluster=devnet`}
+                      href={`https://testnet.explorer.perawallet.app/address/${publicKey}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs font-mono-code text-[#ff5500] hover:underline flex items-center gap-0.5"
@@ -171,12 +195,12 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             </div>
           </div>
 
-          {/* Devnet Balance & Faucet Button */}
+          {/* Testnet Balance & Faucet Button */}
           <div className="flex items-center gap-3 bg-[#0a0c10] p-3 rounded-xl border border-[#1d222e]">
             <div>
-              <div className="text-[10px] font-mono-code text-[#6b7280]">DEVNET SOL BALANCE</div>
+              <div className="text-[10px] font-mono-code text-[#6b7280]">TESTNET ALGO BALANCE</div>
               <div className="text-lg sm:text-xl font-mono-code font-extrabold text-[#ff5500]">
-                {balance.toFixed(4)} SOL
+                {balance.toFixed(4)} ALGO
               </div>
             </div>
             <button
@@ -185,7 +209,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
               className="px-3 py-2 rounded-lg bg-[#ff5500]/20 hover:bg-[#ff5500]/30 border border-[#ff5500]/40 text-[#ff8c4d] text-xs font-mono-code font-bold flex items-center gap-1.5 transition-colors shrink-0"
             >
               <Coins size={13} />
-              <span>{airdropping ? 'Requesting...' : '+1.0 Faucet SOL'}</span>
+              <span>{airdropping ? 'Requesting...' : '+1.0 Faucet ALGO'}</span>
             </button>
           </div>
         </div>
@@ -207,7 +231,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           <div>
             <div className="text-[10px] font-mono-code text-[#6b7280]">EST. FLOOR VALUE</div>
             <div className="text-base sm:text-lg font-mono-code font-bold text-white">
-              ~{totalFloorValue.toFixed(2)} SOL
+              ~{totalFloorValue.toFixed(2)} ALGO
             </div>
           </div>
           <div>
@@ -217,6 +241,42 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Beta Code Redemption Section */}
+        {user && !user.beta_access && (
+          <div className="mt-4 p-3.5 rounded-xl bg-[#141822] border border-[#212634] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-[#ff5500]/15 flex items-center justify-center text-[#ff5500] shrink-0">
+                <Ticket size={16} />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">Have a Beta Access Code?</div>
+                <div className="text-[11px] text-[#8e97a8]">Redeem an invite code to unlock exclusive beta testing features.</div>
+              </div>
+            </div>
+            <form onSubmit={handleRedeemBeta} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={betaInputCode}
+                onChange={e => setBetaInputCode(e.target.value.toUpperCase())}
+                placeholder="MINT-BETA-..."
+                className="bg-[#0e1117] border border-[#262c3d] rounded-lg px-2.5 py-1.5 text-xs text-white uppercase font-mono-code focus:outline-none focus:border-[#ff5500] w-36"
+              />
+              <button
+                type="submit"
+                disabled={redeemingBeta || !betaInputCode.trim()}
+                className="px-3 py-1.5 rounded-lg bg-[#ff5500] hover:bg-[#e04a00] text-white text-xs font-bold font-mono-code transition-colors disabled:opacity-50 shrink-0"
+              >
+                {redeemingBeta ? '...' : 'Redeem'}
+              </button>
+            </form>
+          </div>
+        )}
+        {betaMessage && (
+          <div className="mt-2 text-xs font-mono-code text-[#ff7733]">
+            {betaMessage}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -302,7 +362,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 <div key={i} className="p-3 rounded-xl bg-[#11141a] border border-[#212634] flex items-center justify-between">
                   <div>
                     <h4 className="text-xs font-bold text-white">"{b.auction.customTitle}"</h4>
-                    <div className="text-[11px] text-[#8e97a8]">Your Bid: <span className="text-amber-400 font-bold">{b.myBid.amount} SOL</span></div>
+                    <div className="text-[11px] text-[#8e97a8]">Your Bid: <span className="text-amber-400 font-bold">{b.myBid.amount} ALGO</span></div>
                   </div>
                   <span className={`text-[10px] font-mono-code px-2 py-0.5 rounded font-bold ${b.isLeading ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
                     {b.isLeading ? 'HIGHEST BIDDER' : 'OUTBID'}
@@ -320,7 +380,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                   <div key={auc.id} className="p-3 rounded-xl bg-[#11141a] border border-[#212634] flex items-center justify-between">
                     <div>
                       <h4 className="text-xs font-bold text-white">"{auc.customTitle}"</h4>
-                      <div className="text-[11px] text-emerald-400 font-mono-code font-bold">Won for {auc.currentBid} SOL</div>
+                      <div className="text-[11px] text-emerald-400 font-mono-code font-bold">Won for {auc.currentBid} ALGO</div>
                     </div>
                     <button onClick={() => onSelectNft(auc.nft)} className="px-3 py-1 rounded bg-[#181d28] text-xs text-white">
                       View Item
@@ -344,7 +404,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 <div key={bty.id} className="p-3.5 rounded-xl bg-[#11141a] border border-[#212634]">
                   <div className="flex justify-between items-center text-xs mb-1">
                     <span className="font-bold text-white">{bty.title}</span>
-                    <span className="font-mono-code font-bold text-emerald-400">+{bty.reward} SOL</span>
+                    <span className="font-mono-code font-bold text-emerald-400">+{bty.reward} ALGO</span>
                   </div>
                   <div className="text-[11px] text-[#8e97a8]">{bty.submissions.length} Submissions</div>
                 </div>
@@ -366,7 +426,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                   <span className="text-[#8e97a8] ml-1.5">{act.nftName}</span>
                 </div>
                 <div className="text-right">
-                  {act.price && <span className="font-mono-code font-bold text-[#ff5500]">{act.price} SOL</span>}
+                  {act.price && <span className="font-mono-code font-bold text-[#ff5500]">{act.price} ALGO</span>}
                   <div className="text-[10px] font-mono-code text-[#6b7280]">
                     {new Date(act.timestamp).toLocaleDateString()}
                   </div>

@@ -18,7 +18,7 @@ export const LaunchCostSummary: React.FC<LaunchCostSummaryProps> = ({
   platformFeePercent,
   estimatedNetworkFeeSol,
   walletBalanceSol,
-  currency = 'SOL',
+  currency = 'ALGO',
   connectedWalletAddress,
   onRequestAirdrop,
   isAirdropping = false,
@@ -48,7 +48,7 @@ export const LaunchCostSummary: React.FC<LaunchCostSummaryProps> = ({
         </div>
 
         <span className="text-[10px] text-[#8e97a8] font-mono-code px-2 py-0.5 rounded bg-[#161a24] border border-[#262c3d]">
-          Devnet Fixed
+          Testnet Fixed
         </span>
       </div>
 
@@ -58,7 +58,7 @@ export const LaunchCostSummary: React.FC<LaunchCostSummaryProps> = ({
         <div className="flex items-center justify-between text-[#8e97a8]">
           <div className="flex items-center gap-1.5">
             <span className="text-white">Collection creation</span>
-            <span className="text-[10px] text-[#6b7280] hidden sm:inline">(Candy machine setup)</span>
+            <span className="text-[10px] text-[#6b7280] hidden sm:inline">(Algorand ASA smart contract)</span>
           </div>
           <span className="text-white font-semibold">
             {creationFeeSol.toFixed(2)} {currency}
@@ -81,7 +81,7 @@ export const LaunchCostSummary: React.FC<LaunchCostSummaryProps> = ({
         <div className="flex items-center justify-between text-[#8e97a8]">
           <div className="flex items-center gap-1.5">
             <span className="text-white">Estimated network fee</span>
-            <span className="text-[10px] text-[#6b7280] hidden sm:inline">(Solana rent & gas)</span>
+            <span className="text-[10px] text-[#6b7280] hidden sm:inline">(Algorand MBR & transaction fees)</span>
           </div>
           <span className="text-white font-semibold">
             ~{estimatedNetworkFeeSol.toFixed(3)} {currency}
@@ -106,7 +106,7 @@ export const LaunchCostSummary: React.FC<LaunchCostSummaryProps> = ({
       <div className="p-2.5 rounded-lg bg-[#0d1016] border border-[#1b212d] flex items-start gap-2 text-[11px] text-[#8e97a8]">
         <Info size={13} className="shrink-0 mt-0.5 text-[#ff8c4d]" />
         <span className="leading-normal">
-          <strong className="text-white">Estimated network fee:</strong> Final network fee may vary slightly based on Solana validator slot congestion and rent-exempt lamport balances at execution.
+          <strong className="text-white">Estimated network fee:</strong> Final network fee includes Algorand Minimum Balance Requirement (MBR) and transaction processing fee.
         </span>
       </div>
 
@@ -122,7 +122,7 @@ export const LaunchCostSummary: React.FC<LaunchCostSummaryProps> = ({
               </span>
             </div>
 
-            {/* Airdrop helper on devnet if insufficient */}
+            {/* Airdrop helper on testnet if insufficient */}
             {isInsufficient && onRequestAirdrop && (
               <button
                 type="button"
@@ -138,7 +138,7 @@ export const LaunchCostSummary: React.FC<LaunchCostSummaryProps> = ({
                 ) : (
                   <>
                     <Coins size={12} />
-                    <span>Request +1 Devnet SOL</span>
+                    <span>Request +1 Testnet ALGO</span>
                   </>
                 )}
               </button>
@@ -147,7 +147,7 @@ export const LaunchCostSummary: React.FC<LaunchCostSummaryProps> = ({
         ) : (
           <div className="text-[11px] text-amber-400/90 flex items-center gap-1.5 font-mono-code">
             <AlertCircle size={13} />
-            <span>Connect your Solana Devnet wallet to verify funds before launch.</span>
+            <span>Connect your Algorand Testnet wallet to verify funds before launch.</span>
           </div>
         )}
 
@@ -155,7 +155,7 @@ export const LaunchCostSummary: React.FC<LaunchCostSummaryProps> = ({
           <div className="mt-2.5 p-2 rounded-lg bg-red-950/40 border border-red-800/40 text-red-300 text-[11px] flex items-center gap-2">
             <AlertCircle size={14} className="shrink-0 text-red-400" />
             <span>
-              Your wallet balance ({walletBalanceSol?.toFixed(4)} {currency}) is lower than the estimated total (~{estimatedTotalSol} {currency}). Please request devnet SOL or switch wallets.
+              Your wallet balance ({walletBalanceSol?.toFixed(4)} {currency}) is lower than the estimated total (~{estimatedTotalSol} {currency}). Please request testnet ALGO or switch wallets.
             </span>
           </div>
         )}

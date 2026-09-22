@@ -6,94 +6,83 @@ export interface IndexerStatus {
 }
 
 export interface ExternalAssetResult {
-  mintAddress: string;
+  assetId: string;
   found: boolean;
   metadata?: any;
-  source: 'helius' | 'shyft' | 'mint_internal' | 'unindexed';
+  source: 'algorand_indexer' | 'mint_internal' | 'unindexed';
   note: string;
 }
 
-export class SolanaNftIndexingLayer {
-  private static heliusApiKey = process.env.HELIUS_API_KEY || '';
-  private static shyftApiKey = process.env.SHYFT_API_KEY || '';
+export class AlgorandNftIndexingLayer {
+  private static indexerServer = process.env.ALGORAND_INDEXER_SERVER || '';
+  private static indexerToken = process.env.ALGORAND_INDEXER_TOKEN || '';
 
   /**
    * Get current indexing layer status
    */
   public static getStatus(): IndexerStatus {
-    const isConfigured = Boolean(this.heliusApiKey || this.shyftApiKey);
-    const provider = this.heliusApiKey 
-      ? 'Helius DAS Protocol' 
-      : this.shyftApiKey 
-        ? 'Shyft Solana Indexer' 
-        : 'MINT Internal Indexer + Solana Devnet RPC';
+    const isConfigured = Boolean(this.indexerServer);
+    const provider = isConfigured
+      ? 'Algorand Indexer V2'
+      : 'MINT Internal Protocol Indexer';
 
     return {
       isConfigured,
       provider,
       supportedMethods: [
-        'getAssetByMint',
-        'getAssetsByOwner',
+        'getAssetById',
+        'getAssetsByAccount',
         'searchAssets'
       ],
       message: isConfigured
-        ? `External indexer is active via ${provider}.`
-        : `External cross-program DAS indexer (Helius/Shyft) is not configured in environment. MintBot is operating on verified MINT Protocol collections, genesis drops, and direct Solana Devnet RPC state.`
+        ? `External Algorand indexer is active via ${provider}.`
+        : `External Algorand Indexer is not configured in environment. MintBot is operating on verified MINT Protocol collections, genesis drops, and ledger state.`
     };
   }
 
   /**
-   * Query an asset by mint address.
-   * If external indexer is configured, queries it; otherwise clearly returns unindexed/fallback status without inventing fake data.
+   * Query an asset by asset ID / ASA ID.
+   * If external indexer is configured, queries it; otherwise clearly returns unindexed status without inventing fake data.
    */
-  public static async queryExternalAsset(mintAddress: string): Promise<ExternalAssetResult> {
-    if (!this.heliusApiKey && !this.shyftApiKey) {
+  public static async queryExternalAsset(assetId: string): Promise<ExternalAssetResult> {
+    if (!this.indexerServer) {
       return {
-        mintAddress,
+        assetId,
         found: false,
         source: 'unindexed',
-        note: 'External DAS indexing provider is not configured in environment. Arbitrary unlisted Solana tokens outside MINT Protocol cannot be indexed without HELIUS_API_KEY or SHYFT_API_KEY.'
+        note: 'External Algorand Indexer is not configured in environment. Arbitrary unlisted ASAs outside MINT Protocol cannot be indexed without ALGORAND_INDEXER_SERVER.'
       };
     }
 
-    // Boundary for future provider execution
     try {
-      if (this.heliusApiKey) {
-        const response = await fetch(`https://devnet.helius-rpc.com/?api-key=${this.heliusApiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'mintbot-das-lookup',
-            method: 'getAsset',
-            params: { id: mintAddress }
-          })
-        });
-        const data = await response.json();
-        if (data.result) {
-          return {
-            mintAddress,
-            found: true,
-            metadata: data.result,
-            source: 'helius',
-            note: 'Verified via Helius DAS'
-          };
-        }
+      const response = await fetch(`${this.indexerServer}/v2/assets/${encodeURIComponent(assetId)}`, {
+        headers: this.indexerToken ? { 'X-Indexer-API-Token': this.indexerToken } : {}
+      });
+
+      if (!response.ok) {
+        return {
+          assetId,
+          found: false,
+          source: 'unindexed',
+          note: `Algorand Indexer returned status ${response.status}`
+        };
       }
+
+      const data = await response.json();
+      return {
+        assetId,
+        found: true,
+        metadata: data.asset,
+        source: 'algorand_indexer',
+        note: 'Asset verified via Algorand Indexer V2'
+      };
     } catch (err: any) {
       return {
-        mintAddress,
+        assetId,
         found: false,
         source: 'unindexed',
-        note: `Indexer lookup failed: ${err.message}`
+        note: `Indexer lookup error: ${err.message}`
       };
     }
-
-    return {
-      mintAddress,
-      found: false,
-      source: 'unindexed',
-      note: 'Asset not found on configured indexing provider.'
-    };
   }
 }

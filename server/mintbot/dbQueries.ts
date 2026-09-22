@@ -272,22 +272,22 @@ export class MintDatabaseQueries {
     const topics: Record<string, { topic: string; summary: string; rules: string[]; actionLink?: string }> = {
       fees: {
         topic: 'Protocol Fee Structure',
-        summary: `MINT charges transparent protocol fees routed directly to the verified protocol treasury on Solana:`,
+        summary: `MINT charges transparent protocol fees routed directly to the verified protocol treasury on Algorand:`,
         rules: [
           `Marketplace Secondary Sale Fee: ${config.marketplaceFeePercent}% (deducted from seller payout upon completed sale)`,
           `Auction Settlement Fee: ${config.auctionFeePercent}% (deducted from final winning bid)`,
-          `Primary Candy Machine Mint Fee: ${config.mintFeePercent}% (deducted from collection mint revenue)`,
+          `Primary Launchpad Mint Fee: ${config.mintFeePercent}% (deducted from collection mint revenue)`,
           `Creator Royalties: Configured per collection by the creator (typically 3% - 7%) and strictly enforced on Mint`,
-          `Solana Network Gas: Sub-penny network transaction fees paid in SOL directly to Solana validators`
+          `Algorand Network Gas: Sub-penny network transaction fees paid in ALGO (0.001 ALGO standard min fee)`
         ],
         actionLink: 'explore'
       },
       launchpad: {
         topic: 'Collection Launchpad & Creator Economics',
-        summary: 'MINT provides an end-to-end launchpad for Solana artists, game studios, and procedural generative creators.',
+        summary: 'MINT provides an end-to-end launchpad for Algorand artists, game studios, and generative creators.',
         rules: [
           'Total Supply: Define total supply (e.g. 100 to 10,000 artifacts) with immutable symbols',
-          'Mint Price: Set primary mint cost denominated in SOL',
+          'Mint Price: Set primary mint cost denominated in ALGO',
           'Wallet Mint Limits: Guardrails to prevent bot drain (e.g. max 3 per wallet)',
           'Creator Royalties: Set royalty percentage (0% to 15%) for perpetual secondary earnings',
           'Live Preview: Test and review collection card displays and trait metadata prior to on-chain deployment',
@@ -302,7 +302,7 @@ export class MintDatabaseQueries {
           'Custom Titles: Auctions can have thematic titles (e.g. "The Great Ent Auction")',
           'Starting & Reserve Bids: Bidding begins at the starting bid; reserve price must be reached for settlement',
           'Buy-Now Option: Instant settlement available if buyer meets the instant purchase price',
-          'Minimum Increments: Bids must exceed current highest bid by at least 0.1 SOL or 5%',
+          'Minimum Increments: Bids must exceed current highest bid by at least 1 ALGO or 5%',
           'Atomic Escrow: Funds are held safely; outbid collectors receive immediate notification and balance release',
           'Settlement Finality: Auction won events trigger automated NFT transfer and treasury fee deduction'
         ],
@@ -310,10 +310,10 @@ export class MintDatabaseQueries {
       },
       bounties: {
         topic: 'Creator Bounties & Community Commissions',
-        summary: 'Sponsor or complete creative and technical tasks funded by SOL bounties.',
+        summary: 'Sponsor or complete creative and technical tasks funded by ALGO bounties.',
         rules: [
           'Categories: Artwork design, 3D voxel modeling, lore codex, smart contract scripts, UI themes',
-          'Escrow Payout: Bounties hold rewards in SOL escrow until creator accepts a completed submission',
+          'Escrow Payout: Bounties hold rewards in ALGO escrow until creator accepts a completed submission',
           'Submissions: Contributors attach their portfolio, repository, or artwork files',
           'Approval Workflow: Bounty sponsors review and approve work with on-chain payout release'
         ],
@@ -321,12 +321,12 @@ export class MintDatabaseQueries {
       },
       minting: {
         topic: 'Primary Minting Pipeline',
-        summary: 'How to mint NFTs directly from active launchpad drops on Solana Devnet.',
+        summary: 'How to mint NFTs directly from active launchpad drops on Algorand.',
         rules: [
-          'Connect Solana Devnet wallet (Phantom, Solflare, or standard Devnet keypair)',
-          'Ensure sufficient SOL balance (use the 1.0 SOL devnet faucet in the header if needed)',
+          'Connect Algorand wallet (Pera, Defly, or standard Algorand keypair)',
+          'Ensure sufficient ALGO balance for mint price and minimum balance requirement',
           'Click "Mint" on any active collection; the protocol verifies wallet limit and supply',
-          'Transaction progresses through 6 clear stages with on-chain signature confirmation'
+          'Transaction progresses through clear stages with on-chain confirmation'
         ],
         actionLink: 'explore'
       }
@@ -338,12 +338,12 @@ export class MintDatabaseQueries {
 
     return {
       topic: 'MINT Protocol Overview',
-      summary: 'MINT is a mobile-first, high-throughput NFT platform and launchpad native to Solana.',
+      summary: 'MINT is a mobile-first, high-throughput NFT platform and launchpad native to Algorand.',
       rules: [
-        'Explore Genesis Collections: Discover curated collections like Ents of Solana, Chrono Glyphs, and Hyper Cubes',
-        'Direct Solana Devnet Integration: Interact with real Solana RPC nodes and test transfers with 0 risk',
+        'Explore Genesis Collections: Discover curated collections like Ents of Algorand, Chrono Glyphs, and Hyper Cubes',
+        'Algorand Native Integration: Pure Proof-of-Stake finality and instant settlement with 0 carbon footprint',
         'Verified Checkmark Program: Top creators and authentic collections receive verified shields',
-        'MintBot Assistant: Deep real-time NFT analytics and grounded on-chain research powered by verified data sources'
+        'MintBot Assistant: Deep real-time NFT analytics and grounded research powered by verified data sources'
       ],
       actionLink: 'explore'
     };

@@ -94,7 +94,7 @@ export const MintBotDrawer: React.FC<MintBotDrawerProps> = ({
                   </span>
                 )}
               </div>
-              <span className="text-[11px] text-[#8e97a8] block">Grounded Solana & MINT Research</span>
+              <span className="text-[11px] text-[#8e97a8] block">Grounded Algorand & MINT Research</span>
             </div>
           </div>
 
@@ -132,7 +132,7 @@ export const MintBotDrawer: React.FC<MintBotDrawerProps> = ({
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search NFT, collection floor, or Solana wallet..."
+              placeholder="Search NFT, collection floor, or Algorand wallet..."
               className="w-full pl-9 pr-20 py-2 rounded-lg bg-[#080a0e] border border-[#212634] focus:border-[#ff5500] text-xs text-white placeholder-[#535c6e] focus:outline-none"
             />
             <button
@@ -147,7 +147,7 @@ export const MintBotDrawer: React.FC<MintBotDrawerProps> = ({
           {/* Quick prompt pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 text-[10px]">
             {[
-              { label: 'Ents Floor', q: 'Analyze Ents of Solana collection floor' },
+              { label: 'Ents Floor', q: 'Analyze Ents of Algorand collection floor' },
               { label: 'Elder Ent #001', q: 'Look up Elder Ent #001 traits' },
               { label: 'Protocol Fees', q: 'What are the protocol fees on MINT?' },
               { label: 'Active Auctions', q: 'Find active auctions on MINT' }
@@ -278,7 +278,7 @@ export const MintBotDrawer: React.FC<MintBotDrawerProps> = ({
               <div className="space-y-1">
                 <h4 className="text-xs font-bold text-white">Ask MintBot Anything</h4>
                 <p className="text-[11px] text-[#8e97a8] max-w-xs mx-auto">
-                  Instant factual lookups grounded in MINT order books, launchpad collections, and live Solana Devnet RPC.
+                  Instant factual lookups grounded in MINT order books, launchpad collections, and live Algorand Testnet node data.
                 </p>
               </div>
             </div>

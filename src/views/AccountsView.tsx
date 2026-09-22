@@ -5,6 +5,7 @@ import { NFTCard } from '../components/NFTCard';
 import { CollectionCard } from '../components/CollectionCard';
 import { VerifiedBadge } from '../components/VerifiedBadge';
 import { ProviderBadge } from '../components/ProviderBadge';
+import { UsernameDisplay } from '../components/UsernameDisplay';
 import { EditProfileModal } from '../components/EditProfileModal';
 import { VerificationModal } from '../components/VerificationModal';
 import { useAuth } from '../context/AuthContext';
@@ -125,7 +126,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
           Connect to Access Accounts
         </h2>
         <p className="text-xs text-[#9ca3af] leading-relaxed">
-          Sign in or connect your Solana wallet to view your profile, manage owned NFTs, active bids, collections, and on-chain balances.
+          Sign in or connect your Algorand wallet to view your profile, manage owned NFTs, active bids, collections, and on-chain balances.
         </p>
         <div className="flex justify-center gap-3 pt-2">
           <button
@@ -197,11 +198,11 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
             )}
             <div className="min-w-0 flex-1">
               <h1 className="text-xl sm:text-2xl font-bold text-white break-words">
-                {user ? user.displayName : 'Solana Account'}
+                {user ? user.displayName : 'Algorand Account'}
               </h1>
               {user?.username && (
-                <div className="flex items-center gap-1.5 text-xs font-mono-code text-[#ff5500]">
-                  <span>@{user.username}</span>
+                <div className="flex items-center gap-1.5 text-xs font-mono-code">
+                  <UsernameDisplay user={user} className="text-xs" />
                   {user?.isVerified && <VerifiedBadge size="sm" />}
                 </div>
               )}
@@ -219,12 +220,12 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                     {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
                   </button>
                   <a
-                    href={`https://explorer.solana.com/address/${publicKey}?cluster=devnet`}
+                    href={`https://testnet.explorer.perawallet.app/address/${publicKey}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-1 rounded text-[#8e97a8] hover:text-white transition-colors"
-                    title="View in Solana Explorer"
-                    aria-label="Solana Explorer"
+                    title="View in Algorand Explorer"
+                    aria-label="Algorand Explorer"
                   >
                     <ExternalLink size={12} />
                   </a>
@@ -233,7 +234,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
             </div>
           </div>
 
-          {/* Flat Action Buttons & Devnet SOL */}
+          {/* Flat Action Buttons & Testnet ALGO */}
           <div className="flex flex-wrap items-center gap-3">
             {user && (
               <>
@@ -258,9 +259,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
             {/* Flat Balance & Faucet */}
             <div className="flex items-center gap-3 pl-2 border-l border-[#212634]">
               <div>
-                <div className="text-[9px] font-mono-code text-[#6b7280]">DEVNET SOL</div>
+                <div className="text-[9px] font-mono-code text-[#6b7280]">TESTNET ALGO</div>
                 <div className="text-sm font-mono-code font-bold text-[#ff5500]">
-                  {balance.toFixed(3)} SOL
+                  {balance.toFixed(3)} ALGO
                 </div>
               </div>
               <button
@@ -268,7 +269,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                 disabled={airdropping}
                 className="px-2.5 py-1 rounded-lg border border-[#ff5500]/40 hover:bg-[#ff5500]/10 text-[#ff8c4d] text-[11px] font-mono-code font-bold transition-colors cursor-pointer"
               >
-                {airdropping ? '...' : '+1.0 SOL'}
+                {airdropping ? '...' : '+1.0 ALGO'}
               </button>
             </div>
           </div>
@@ -298,7 +299,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
           <div>
             <div className="text-[10px] font-mono-code text-[#6b7280] uppercase">Est. Floor Value</div>
             <div className="text-base sm:text-lg font-mono-code font-bold text-white">
-              ~{totalFloorValue.toFixed(2)} SOL
+              ~{totalFloorValue.toFixed(2)} ALGO
             </div>
           </div>
           <div>
@@ -358,8 +359,8 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-bold text-white truncate">{acc.user.displayName}</div>
-                      <div className="flex items-center gap-1 text-[11px] font-mono-code text-[#8e97a8] truncate">
-                        <span>@{acc.user.username}</span>
+                      <div className="flex items-center gap-1 text-[11px] font-mono-code truncate">
+                        <UsernameDisplay user={acc.user} className="text-[11px]" />
                         {acc.user.isVerified && <VerifiedBadge size="sm" />}
                       </div>
                     </div>
@@ -414,7 +415,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                 <div className="py-16 text-center space-y-3">
                   <Layers size={28} className="mx-auto text-[#6b7280]" />
                   <p className="text-sm font-bold text-white">No NFTs owned yet</p>
-                  <p className="text-xs text-[#8e97a8]">Mint, purchase on marketplace, or win auctions on Solana Devnet to build your vault.</p>
+                  <p className="text-xs text-[#8e97a8]">Mint, purchase on marketplace, or win auctions on Algorand Testnet to build your vault.</p>
                   <button
                     onClick={() => onNavigate('explore')}
                     className="px-4 py-2 rounded-lg bg-[#ff5500] text-xs font-bold text-white cursor-pointer"
@@ -490,7 +491,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                         <img src={auc.nftImage} alt={auc.nftName} className="w-12 h-12 rounded-lg object-cover" />
                         <div>
                           <h4 className="text-xs font-bold text-white">{auc.nftName}</h4>
-                          <span className="text-[10px] font-mono-code text-emerald-400">AUCTION WON • {auc.currentBid} SOL</span>
+                          <span className="text-[10px] font-mono-code text-emerald-400">AUCTION WON • {auc.currentBid} ALGO</span>
                         </div>
                       </div>
                     </div>
@@ -506,7 +507,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                 <div className="py-16 text-center space-y-2">
                   <Target size={28} className="mx-auto text-[#6b7280]" />
                   <p className="text-sm font-bold text-white">No active bounties</p>
-                  <p className="text-xs text-[#8e97a8]">Create design or curation bounties or submit work for SOL rewards.</p>
+                  <p className="text-xs text-[#8e97a8]">Create design or curation bounties or submit work for ALGO rewards.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-[#1f2533]">
@@ -514,7 +515,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                     <div key={bounty.id} className="py-3.5 flex items-center justify-between">
                       <div>
                         <h4 className="text-xs font-bold text-white">{bounty.title}</h4>
-                        <span className="text-[10px] font-mono-code text-[#ff5500]">{bounty.rewardSol} SOL REWARD</span>
+                        <span className="text-[10px] font-mono-code text-[#ff5500]">{bounty.rewardSol} ALGO REWARD</span>
                       </div>
                     </div>
                   ))}
@@ -541,7 +542,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                         </span>
                         <div>
                           <div className="font-bold text-white">
-                            {act.nftName || act.collectionName || 'Solana Transaction'}
+                            {act.nftName || act.collectionName || 'Algorand Transaction'}
                           </div>
                           <div className="text-[10px] text-[#6b7280] font-mono-code">
                             {act.signature ? `${act.signature.slice(0, 10)}...` : 'Confirmed'}
@@ -552,7 +553,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                       {act.price && (
                         <div className="text-right">
                           <span className="font-mono-code font-bold text-[#ff5500]">
-                            {act.price} SOL
+                            {act.price} ALGO
                           </span>
                         </div>
                       )}

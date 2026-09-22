@@ -1,7 +1,23 @@
 import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcryptjs';
-import { User, NFTCollection, NFT, Auction, Bounty, ActivityEvent, Notification, PlatformConfig, LikeRecord, Community, CommunityMember, CommunityPost, PostComment, FollowRecord, VerificationRequest } from '../src/types';
+import {
+  User,
+  NFTCollection,
+  NFT,
+  Auction,
+  Bounty,
+  ActivityEvent,
+  Notification,
+  PlatformConfig,
+  SocialLike,
+  SocialPost,
+  SocialComment,
+  SocialCommunity,
+  SocialCommunityMember,
+  SocialFollow,
+  VerificationRequest
+} from '../src/types';
 
 export interface DatabaseSchema {
   users: User[];
@@ -13,13 +29,15 @@ export interface DatabaseSchema {
   notifications: Notification[];
   config: PlatformConfig;
   userPasswords: Record<string, string>; // userId -> bcrypt hash
-  likes: LikeRecord[];
-  posts: CommunityPost[];
-  comments: PostComment[];
-  communities: Community[];
-  communityMembers: CommunityMember[];
-  follows: FollowRecord[];
+  likes: SocialLike[];
+  posts: SocialPost[];
+  comments: SocialComment[];
+  communities: SocialCommunity[];
+  communityMembers: SocialCommunityMember[];
+  follows: SocialFollow[];
   verificationRequests: VerificationRequest[];
+  waitlist: any[];
+  betaCodes: any[];
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -31,46 +49,86 @@ if (!fs.existsSync(DATA_DIR)) {
 }
 
 function getInitialDatabase(): DatabaseSchema {
-  const initialPasswordHash = bcrypt.hashSync('EntSolana2026!', 10);
+  const initialPasswordHash = bcrypt.hashSync('EntAlgo2026!', 10);
   const now = new Date().toISOString();
 
-  // Platform owner user requested by user
+  // Platform owner user requested by user: @L (pervercy23@gmail.com)
   const adminUser: User = {
     id: 'usr_ace_admin',
     email: 'pervercy23@gmail.com',
-    username: 'Ace',
+    username: 'L',
     displayName: 'A Certain Ent',
     avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=240&auto=format&fit=crop&q=80',
     banner: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=1200&auto=format&fit=crop&q=80',
-    bio: 'Genesis creator & protocol architect. Curator of organic geometric artifacts on Solana.',
-    walletAddress: 'ACEp1aTfX7h8Kq3w9uV4y2z5L1m6NoP8qRsTuVwXyZ',
+    bio: 'Genesis creator & protocol architect. Curator of organic geometric artifacts on Algorand.',
+    walletAddress: 'ACEALGORANDTESTNETVALIDATORCREATOR7XQP9KLM1VOS3W2YRT7UABCD',
     role: 'owner',
+    privilegedType: 'platform_owner',
+    isPrivileged: true,
     isVerified: true,
+    isFoundingMember: true,
+    foundingMemberGrantedAt: now,
+    foundingMemberReason: 'Genesis protocol architect & platform owner',
     plan: 'unlimited',
     bot_unlimited: true,
+    beta_access: true,
+    usernameColor: '#ff5500',
     entitlement: {
       tier: 'unlimited',
       bot_unlimited: true
     },
     socialLinks: {
-      website: 'https://mint.solana.io',
+      website: 'https://mint.app',
       twitter: 'https://x.com/A_Certain_Ent',
-      discord: 'https://discord.gg/solana',
-      telegram: 'https://t.me/mint_solana'
+      discord: 'https://discord.gg/algorand',
+      telegram: 'https://t.me/mint_protocol'
+    },
+    createdAt: now,
+    profileCompleted: true
+  };
+
+  // Second privileged MINT account: @mint (fahudmajed@gmail.com)
+  const mintUser: User = {
+    id: 'usr_mint_official',
+    email: 'fahudmajed@gmail.com',
+    username: 'mint',
+    displayName: 'MINT',
+    avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=240&auto=format&fit=crop&q=80',
+    banner: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=1200&auto=format&fit=crop&q=80',
+    bio: 'Official MINT Protocol account. Curating digital artifacts and ecosystem community on Algorand.',
+    walletAddress: 'M1NTALGORANDTESTNETVALIDATORCREATOR7XQP9KLM1VOS3W2YRT7UABC',
+    role: 'trusted_mint_account',
+    privilegedType: 'trusted_mint_account',
+    isPrivileged: true,
+    isVerified: true,
+    isFoundingMember: true,
+    foundingMemberGrantedAt: now,
+    foundingMemberReason: 'Official MINT protocol identity account',
+    plan: 'unlimited',
+    bot_unlimited: true,
+    beta_access: true,
+    usernameColor: '#ff5500',
+    entitlement: {
+      tier: 'unlimited',
+      bot_unlimited: true
+    },
+    socialLinks: {
+      website: 'https://mint.app',
+      twitter: 'https://x.com/mint'
     },
     createdAt: now,
     profileCompleted: true
   };
 
   const creatorUser2: User = {
-    id: 'usr_sol_artisan',
-    email: 'solartisan@solana.art',
+    id: 'usr_algo_artisan',
+    email: 'artisan@kroma.art',
     username: 'Kroma',
     displayName: 'Kroma Studios',
     avatar: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=240&auto=format&fit=crop&q=80',
     banner: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=1200&auto=format&fit=crop&q=80',
-    bio: 'Pioneering generative voxel & 3D Solana aesthetics.',
-    walletAddress: 'Krom9x87Hq6tLm2P4vSw5rYz8bAcD1eFgHiJkLmNoP',
+    bio: 'Pioneering generative voxel & 3D Algorand aesthetics.',
+    walletAddress: 'KROMALGORANDTESTNETVALIDATORCREATOR7XQP9KLM1VOS3W2YRT7UABC',
     role: 'creator',
     isVerified: false,
     socialLinks: {
@@ -87,24 +145,24 @@ function getInitialDatabase(): DatabaseSchema {
       creatorId: adminUser.id,
       creatorAddress: adminUser.walletAddress!,
       creatorUsername: adminUser.username,
-      name: 'Ents of Solana',
+      name: 'Ents of Algorand',
       symbol: 'ENTS',
-      description: 'The ancient guardians of the high-throughput blockchain. 500 hand-rendered organic constructs forged in Solana orange flame and obsidian stone.',
+      description: 'The ancient guardians of the high-throughput blockchain. 500 hand-rendered organic constructs forged in solar orange flame and obsidian stone.',
       image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=80',
       banner: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=1200&auto=format&fit=crop&q=80',
       totalSupply: 500,
       mintedSupply: 142,
-      mintPrice: 0.85,
+      mintPrice: 45,
       royaltyFee: 5,
-      contractAddress: 'Ent54xZqP9kLm1VoS3w2yRt7uAbCdEfGhIjKlMnOpQr',
+      contractAddress: 'ENT54XZQP9KLM1VOS3W2YRT7UABCDEFGHIKLMNOPQRSTUVWXYZ12345678',
       isVerified: true,
       socialLinks: {
-        website: 'https://mint.solana.io',
+        website: 'https://mint.app',
         twitter: 'https://x.com/A_Certain_Ent',
         discord: 'https://discord.gg/ents'
       },
-      floorPrice: 1.45,
-      totalVolume: 320.5,
+      floorPrice: 75,
+      totalVolume: 16250,
       listedCount: 18,
       createdAt: now,
       isLive: true,
@@ -117,20 +175,20 @@ function getInitialDatabase(): DatabaseSchema {
       creatorUsername: creatorUser2.username,
       name: 'Chrono Glyphs',
       symbol: 'GLYPH',
-      description: 'Mathematical time shards captured at sub-second finality. Highly dense procedural artifacts for Solana collectors.',
+      description: 'Mathematical time shards captured at instant finality. Highly dense procedural artifacts for Algorand collectors.',
       image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=500&auto=format&fit=crop&q=80',
       banner: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80',
       totalSupply: 250,
       mintedSupply: 89,
-      mintPrice: 1.2,
+      mintPrice: 60,
       royaltyFee: 4.5,
-      contractAddress: 'Glyph8uVwXyZ1aBcDeFgHiJkLmNoPqRsTuVwXyZ2',
+      contractAddress: 'GLYPH8UVWXYZ1ABCDEFGHIKLMNOPQRSTUVWXYZ1234567890ABCDEFGHIK',
       isVerified: true,
       socialLinks: {
         twitter: 'https://x.com/kroma_studios'
       },
-      floorPrice: 2.1,
-      totalVolume: 418.0,
+      floorPrice: 110,
+      totalVolume: 21400,
       listedCount: 12,
       createdAt: now,
       isLive: true,
@@ -143,17 +201,17 @@ function getInitialDatabase(): DatabaseSchema {
       creatorUsername: adminUser.username,
       name: 'Hyper Cubes M',
       symbol: 'HCUBE',
-      description: 'Isometric isometric geometric signatures symbolizing the MINT protocol architecture. Monochromatic obsidian and solar orange facets.',
+      description: 'Isometric geometric signatures symbolizing the MINT protocol architecture. Monochromatic obsidian and solar orange facets.',
       image: 'https://images.unsplash.com/photo-1633167606207-d840b5070fc2?w=500&auto=format&fit=crop&q=80',
       banner: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=1200&auto=format&fit=crop&q=80',
       totalSupply: 100,
       mintedSupply: 48,
-      mintPrice: 0.5,
+      mintPrice: 25,
       royaltyFee: 3,
-      contractAddress: 'Cube77wXyZ1aBcDeFgHiJkLmNoPqRsTuVwXyZ89',
+      contractAddress: 'CUBE77WXYZ1ABCDEFGHIKLMNOPQRSTUVWXYZ1234567890ABCDEFGHIKLM',
       isVerified: true,
-      floorPrice: 0.95,
-      totalVolume: 126.8,
+      floorPrice: 50,
+      totalVolume: 6400,
       listedCount: 7,
       createdAt: now,
       isLive: true,
@@ -166,12 +224,12 @@ function getInitialDatabase(): DatabaseSchema {
     {
       id: 'nft_ent_001',
       collectionId: 'col_ents_genesis',
-      collectionName: 'Ents of Solana',
+      collectionName: 'Ents of Algorand',
       collectionSymbol: 'ENTS',
       name: 'Elder Ent #001 — Prime Sentinel',
       description: 'The first genesis Ent sculpted from ancient root memory and obsidian stone with an internal orange core reactor.',
       image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
-      tokenAddress: '7XqP9kLm1VoS3w2yRt7uAbCdEfGhIjKlMnOpQrStUv',
+      tokenAddress: '71938201',
       creatorId: adminUser.id,
       creatorName: adminUser.displayName,
       creatorUsername: adminUser.username,
@@ -181,7 +239,7 @@ function getInitialDatabase(): DatabaseSchema {
       ownerAddress: adminUser.walletAddress!,
       ownerUsername: adminUser.username,
       isListed: true,
-      price: 2.75,
+      price: 135,
       isInAuction: false,
       traits: [
         { trait_type: 'Core', value: 'Solar Plasma', rarity: 3 },
@@ -190,20 +248,20 @@ function getInitialDatabase(): DatabaseSchema {
         { trait_type: 'Era', value: 'Genesis Epoch', rarity: 1 }
       ],
       createdAt: now,
-      lastSalePrice: 2.1,
+      lastSalePrice: 105,
       views: 842,
       likes: 124,
-      blockchain: 'Solana'
+      blockchain: 'Algorand'
     },
     {
       id: 'nft_ent_042',
       collectionId: 'col_ents_genesis',
-      collectionName: 'Ents of Solana',
+      collectionName: 'Ents of Algorand',
       collectionSymbol: 'ENTS',
       name: 'Grove Weaver #042',
-      description: 'Interwoven root filaments generating kinetic energy through the Solana validator network.',
+      description: 'Interwoven root filaments generating kinetic energy through the Algorand consensus network.',
       image: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=800&auto=format&fit=crop&q=80',
-      tokenAddress: '9Lm1VoS3w2yRt7uAbCdEfGhIjKlMnOpQrStUvWxYz',
+      tokenAddress: '71938242',
       creatorId: adminUser.id,
       creatorName: adminUser.displayName,
       creatorUsername: adminUser.username,
@@ -224,7 +282,7 @@ function getInitialDatabase(): DatabaseSchema {
       createdAt: now,
       views: 1290,
       likes: 218,
-      blockchain: 'Solana'
+      blockchain: 'Algorand'
     },
     {
       id: 'nft_glyph_108',
@@ -232,9 +290,9 @@ function getInitialDatabase(): DatabaseSchema {
       collectionName: 'Chrono Glyphs',
       collectionSymbol: 'GLYPH',
       name: 'Chrono Glyph #108 — Apex Horizon',
-      description: 'A harmonic temporal prism resonating at 400 millisecond slot intervals.',
+      description: 'A harmonic temporal prism resonating at instant round finality.',
       image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&auto=format&fit=crop&q=80',
-      tokenAddress: '4VoS3w2yRt7uAbCdEfGhIjKlMnOpQrStUvWxYz12',
+      tokenAddress: '88492108',
       creatorId: creatorUser2.id,
       creatorName: creatorUser2.displayName,
       creatorUsername: creatorUser2.username,
@@ -244,18 +302,18 @@ function getInitialDatabase(): DatabaseSchema {
       ownerAddress: creatorUser2.walletAddress!,
       ownerUsername: creatorUser2.username,
       isListed: true,
-      price: 3.4,
+      price: 170,
       isInAuction: false,
       traits: [
-        { trait_type: 'Frequency', value: '400ms', rarity: 4 },
+        { trait_type: 'Frequency', value: 'Instant', rarity: 4 },
         { trait_type: 'Prism', value: 'Refractive Amber', rarity: 6 },
         { trait_type: 'Harmonic', value: 'Octave 8', rarity: 11 }
       ],
       createdAt: now,
-      lastSalePrice: 2.8,
+      lastSalePrice: 140,
       views: 612,
       likes: 89,
-      blockchain: 'Solana'
+      blockchain: 'Algorand'
     },
     {
       id: 'nft_cube_007',
@@ -263,9 +321,9 @@ function getInitialDatabase(): DatabaseSchema {
       collectionName: 'Hyper Cubes M',
       collectionSymbol: 'HCUBE',
       name: 'Isometric M #007',
-      description: 'Official isometric brand emblem minted on Solana devnet. Pure geometric orange structure.',
+      description: 'Official isometric brand emblem minted on Algorand. Pure geometric orange structure.',
       image: 'https://images.unsplash.com/photo-1633167606207-d840b5070fc2?w=800&auto=format&fit=crop&q=80',
-      tokenAddress: '2w2yRt7uAbCdEfGhIjKlMnOpQrStUvWxYz123456',
+      tokenAddress: '99201007',
       creatorId: adminUser.id,
       creatorName: adminUser.displayName,
       creatorUsername: adminUser.username,
@@ -275,7 +333,7 @@ function getInitialDatabase(): DatabaseSchema {
       ownerAddress: adminUser.walletAddress!,
       ownerUsername: adminUser.username,
       isListed: true,
-      price: 1.15,
+      price: 60,
       isInAuction: false,
       traits: [
         { trait_type: 'Shape', value: 'Isometric Hexagon M', rarity: 2 },
@@ -285,7 +343,7 @@ function getInitialDatabase(): DatabaseSchema {
       createdAt: now,
       views: 450,
       likes: 92,
-      blockchain: 'Solana'
+      blockchain: 'Algorand'
     }
   ];
 
@@ -302,14 +360,14 @@ function getInitialDatabase(): DatabaseSchema {
       creatorUsername: adminUser.username,
       creatorAvatar: adminUser.avatar,
       creatorVerified: true,
-      startingPrice: 1.5,
-      reservePrice: 2.5,
-      buyNowPrice: 5.0,
-      currency: 'SOL',
+      startingPrice: 75,
+      reservePrice: 125,
+      buyNowPrice: 250,
+      currency: 'ALGO',
       startTime: now,
       endTime: new Date(Date.now() + 1000 * 60 * 60 * 46).toISOString(), // 46 hours left
-      minBidIncrement: 0.1,
-      currentBid: 2.8,
+      minBidIncrement: 5,
+      currentBid: 140,
       currentBidderId: creatorUser2.id,
       currentBidderUsername: creatorUser2.username,
       currentBidderAddress: creatorUser2.walletAddress,
@@ -319,26 +377,26 @@ function getInitialDatabase(): DatabaseSchema {
       bids: [
         {
           id: 'bid_1',
-          bidderId: 'usr_sol_artisan',
+          bidderId: 'usr_algo_artisan',
           bidderUsername: 'Kroma',
           bidderAddress: creatorUser2.walletAddress!,
-          amount: 2.8,
+          amount: 140,
           timestamp: new Date(Date.now() - 1000 * 60 * 35).toISOString()
         },
         {
           id: 'bid_2',
           bidderId: 'usr_collector_vault',
-          bidderUsername: 'SolWhale',
-          bidderAddress: 'Whal38kP9vLm2Q4rSt1uVxYz8aBcDeFgHiJkLmNoP',
-          amount: 2.5,
+          bidderUsername: 'AlgoWhale',
+          bidderAddress: 'WHAL38KP9VLM2Q4RST1UVXYZ8ABCDEFGHIKLMNOPQRSTUVWXYZ12345678',
+          amount: 125,
           timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString()
         },
         {
           id: 'bid_3',
-          bidderId: 'usr_sol_artisan',
+          bidderId: 'usr_algo_artisan',
           bidderUsername: 'Kroma',
           bidderAddress: creatorUser2.walletAddress!,
-          amount: 2.1,
+          amount: 105,
           timestamp: new Date(Date.now() - 1000 * 60 * 240).toISOString()
         }
       ]
@@ -349,21 +407,21 @@ function getInitialDatabase(): DatabaseSchema {
   const bounties: Bounty[] = [
     {
       id: 'bounty_01_ent_lore',
-      title: 'Ents of Solana: Codex & Lore Design',
-      description: 'We are seeking an experienced worldbuilder to construct the official 10-chapter mythology of the Ents of Solana collection. Must define the origin of the obsidian core and solar flame validators.',
+      title: 'Ents of Algorand: Codex & Lore Design',
+      description: 'We are seeking an experienced worldbuilder to construct the official 10-chapter mythology of the Ents of Algorand collection. Must define the origin of the obsidian core and consensus nodes.',
       creatorId: adminUser.id,
       creatorName: adminUser.displayName,
       creatorUsername: adminUser.username,
       creatorAvatar: adminUser.avatar,
       creatorVerified: true,
-      reward: 3.5,
-      currency: 'SOL',
+      reward: 175,
+      currency: 'ALGO',
       deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
       category: 'Collection Lore',
       requirements: [
         'Detailed worldbuilding document (Markdown or PDF)',
         'Character profiles for prime guardians',
-        'Validator technical alignment (Solana slot architecture metaphors)'
+        'Consensus technical alignment (Algorand Pure PoS metaphors)'
       ],
       status: 'open',
       submissions: [],
@@ -378,8 +436,8 @@ function getInitialDatabase(): DatabaseSchema {
       creatorUsername: adminUser.username,
       creatorAvatar: adminUser.avatar,
       creatorVerified: true,
-      reward: 5.0,
-      currency: 'SOL',
+      reward: 250,
+      currency: 'ALGO',
       deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 4).toISOString(),
       category: '3D & Generative',
       requirements: [
@@ -413,12 +471,12 @@ function getInitialDatabase(): DatabaseSchema {
       nftName: 'Grove Weaver #042',
       nftImage: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=200&auto=format&fit=crop&q=80',
       collectionId: 'col_ents_genesis',
-      collectionName: 'Ents of Solana',
+      collectionName: 'Ents of Algorand',
       fromAddress: creatorUser2.walletAddress,
       fromUsername: creatorUser2.username,
-      price: 2.8,
+      price: 140,
       timestamp: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
-      txSignature: '4zLp8vQxRt1mNoPqRsTuVwXyZ1aBcDeFgHiJkLmNoPqR'
+      txSignature: '4ZLP8VQXRT1MNOPQRSTUVWXY'
     },
     {
       id: 'act_2',
@@ -427,12 +485,12 @@ function getInitialDatabase(): DatabaseSchema {
       nftName: 'Elder Ent #001 — Prime Sentinel',
       nftImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80',
       collectionId: 'col_ents_genesis',
-      collectionName: 'Ents of Solana',
+      collectionName: 'Ents of Algorand',
       fromAddress: adminUser.walletAddress,
       fromUsername: adminUser.username,
-      price: 2.75,
+      price: 135,
       timestamp: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
-      txSignature: '5vRt1mNoPqRsTuVwXyZ1aBcDeFgHiJkLmNoPqRsTuVw'
+      txSignature: '5VRT1MNOPQRSTUVWXY1ABCDE'
     },
     {
       id: 'act_3',
@@ -441,19 +499,19 @@ function getInitialDatabase(): DatabaseSchema {
       nftName: 'The Great Ent Auction',
       nftImage: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=200&auto=format&fit=crop&q=80',
       collectionId: 'col_ents_genesis',
-      collectionName: 'Ents of Solana',
+      collectionName: 'Ents of Algorand',
       fromAddress: adminUser.walletAddress,
       fromUsername: adminUser.username,
-      price: 1.5,
+      price: 75,
       timestamp: new Date(Date.now() - 1000 * 60 * 300).toISOString()
     },
     {
       id: 'act_4',
       type: 'bounty_created',
-      nftName: 'Ents of Solana: Codex & Lore Design',
+      nftName: 'Ents of Algorand: Codex & Lore Design',
       fromAddress: adminUser.walletAddress,
       fromUsername: adminUser.username,
-      price: 3.5,
+      price: 175,
       timestamp: new Date(Date.now() - 1000 * 60 * 500).toISOString()
     }
   ];
@@ -474,32 +532,32 @@ function getInitialDatabase(): DatabaseSchema {
     marketplaceFeePercent: 1.5,
     auctionFeePercent: 2.0,
     mintFeePercent: 1.0,
-    treasuryAddress: 'ACEp1aTfX7h8Kq3w9uV4y2z5L1m6NoP8qRsTuVwXyZ',
-    network: 'devnet',
-    rpcEndpoint: 'https://api.devnet.solana.com',
+    treasuryAddress: 'ACEALGORANDTESTNETVALIDATORCREATOR7XQP9KLM1VOS3W2YRT7UABCD',
+    network: 'testnet',
+    rpcEndpoint: 'https://testnet-api.algonode.cloud',
     mintBotConfig: {
       freeHourlyLimit: 20,
       proHourlyLimit: 200,
       enableExternalIndexer: false,
-      indexerProviderName: 'Helius / Shyft (Boundary Ready)',
-      defaultNetwork: 'Solana Devnet'
+      indexerProviderName: 'Algorand Indexer V2',
+      defaultNetwork: 'Algorand Testnet'
     },
     launchConfig: {
-      collectionCreationFeeSol: 0.05,
-      estimatedNetworkFeeSol: 0.012,
+      collectionCreationFeeSol: 2.5,
+      estimatedNetworkFeeSol: 0.001,
       minSupply: 1,
       maxSupply: 10000,
       minMintPriceSol: 0,
-      maxMintPriceSol: 100,
+      maxMintPriceSol: 5000,
       maxRoyaltyPercent: 15,
       defaultWalletLimit: 5,
       maxWalletLimit: 50,
-      allowedCurrencies: ['SOL', 'USDC']
+      allowedCurrencies: ['ALGO', 'USDC']
     },
     verificationConfig: {
       minAccountAgeDays: 0,
       minCreatedNfts: 1,
-      minSolVolume: 0.1,
+      minSolVolume: 10,
       maxVerifiedCommunitiesPerUser: 1,
       adminMultiCommunityAllowed: true,
       cooldownDays: 7
@@ -510,11 +568,12 @@ function getInitialDatabase(): DatabaseSchema {
 
   const userPasswords: Record<string, string> = {
     [adminUser.id]: initialPasswordHash,
+    [mintUser.id]: initialPasswordHash,
     [creatorUser2.id]: bcrypt.hashSync('CreatorPass2026!', 10)
   };
 
   return {
-    users: [adminUser, creatorUser2],
+    users: [adminUser, mintUser, creatorUser2],
     collections,
     nfts,
     auctions,
@@ -529,7 +588,9 @@ function getInitialDatabase(): DatabaseSchema {
     communities: [],
     communityMembers: [],
     follows: [],
-    verificationRequests: []
+    verificationRequests: [],
+    waitlist: [],
+    betaCodes: []
   };
 }
 
@@ -562,8 +623,8 @@ class Database {
         }
 
         // Ensure creatorUser2 or other users are only verified if explicit
-        const creator2 = parsed.users?.find((u: User) => u.id === 'usr_sol_artisan');
-        if (creator2 && creator2.email === 'solartisan@solana.art') {
+        const creator2 = parsed.users?.find((u: User) => u.id === 'usr_algo_artisan' || u.id === 'usr_sol_artisan');
+        if (creator2) {
           creator2.isVerified = false;
         }
 
@@ -574,6 +635,8 @@ class Database {
         if (!Array.isArray(parsed.communityMembers)) parsed.communityMembers = [];
         if (!Array.isArray(parsed.follows)) parsed.follows = [];
         if (!Array.isArray(parsed.verificationRequests)) parsed.verificationRequests = [];
+        if (!Array.isArray(parsed.waitlist)) parsed.waitlist = [];
+        if (!Array.isArray(parsed.betaCodes)) parsed.betaCodes = [];
 
         if (!parsed.config) parsed.config = {} as any;
         if (!parsed.config.communityCreationCooldownHours) parsed.config.communityCreationCooldownHours = 10;
@@ -581,7 +644,7 @@ class Database {
           parsed.config.verificationConfig = {
             minAccountAgeDays: 0,
             minCreatedNfts: 1,
-            minSolVolume: 0.1,
+            minSolVolume: 10,
             maxVerifiedCommunitiesPerUser: 1,
             adminMultiCommunityAllowed: true,
             cooldownDays: 7,
@@ -611,32 +674,104 @@ class Database {
           }
         }
 
-        // Ensure owner account has verified & founding status
-        const aceUser = (parsed.users || []).find(u => u.id === 'usr_ace_admin' || u.username.toLowerCase() === 'ace');
-        if (aceUser) {
-          aceUser.role = 'owner';
-          aceUser.isVerified = true;
-          aceUser.isFoundingMember = true;
-          if (!aceUser.foundingMemberGrantedAt) {
-            aceUser.foundingMemberGrantedAt = aceUser.createdAt;
-            aceUser.foundingMemberReason = 'Genesis protocol architect & platform owner';
+        // Ensure primary owner account @L (pervercy23@gmail.com) has verified, privileged, & founding status
+        let ownerUser = (parsed.users || []).find(u => u.email?.toLowerCase() === 'pervercy23@gmail.com' || u.id === 'usr_ace_admin');
+        if (ownerUser) {
+          ownerUser.username = 'L';
+          ownerUser.displayName = 'A Certain Ent';
+          ownerUser.role = 'owner';
+          ownerUser.privilegedType = 'platform_owner';
+          ownerUser.isPrivileged = true;
+          ownerUser.isVerified = true;
+          ownerUser.isFoundingMember = true;
+          ownerUser.plan = 'unlimited';
+          ownerUser.bot_unlimited = true;
+          ownerUser.beta_access = true;
+          ownerUser.usernameColor = '#ff5500';
+          if (!ownerUser.entitlement) {
+            ownerUser.entitlement = { tier: 'unlimited', bot_unlimited: true };
           }
+          if (!ownerUser.foundingMemberGrantedAt) {
+            ownerUser.foundingMemberGrantedAt = ownerUser.createdAt;
+            ownerUser.foundingMemberReason = 'Genesis protocol architect & platform owner';
+          }
+        }
+
+        // Ensure second privileged account @mint (fahudmajed@gmail.com) has verified, privileged, & founding status
+        let mintUserAcc = (parsed.users || []).find(u => u.email?.toLowerCase() === 'fahudmajed@gmail.com' || u.username.toLowerCase() === 'mint');
+        if (!mintUserAcc) {
+          const nowIso = new Date().toISOString();
+          mintUserAcc = {
+            id: 'usr_mint_official',
+            email: 'fahudmajed@gmail.com',
+            username: 'mint',
+            displayName: 'MINT',
+            avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=240&auto=format&fit=crop&q=80',
+            banner: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=1200&auto=format&fit=crop&q=80',
+            bio: 'Official MINT Protocol account. Curating digital artifacts and ecosystem community on Algorand.',
+            walletAddress: 'M1NTALGORANDTESTNETVALIDATORCREATOR7XQP9KLM1VOS3W2YRT7UABC',
+            role: 'trusted_mint_account',
+            privilegedType: 'trusted_mint_account',
+            isPrivileged: true,
+            isVerified: true,
+            isFoundingMember: true,
+            foundingMemberGrantedAt: nowIso,
+            foundingMemberReason: 'Official MINT protocol identity account',
+            plan: 'unlimited',
+            bot_unlimited: true,
+            entitlement: {
+              tier: 'unlimited',
+              bot_unlimited: true
+            },
+            socialLinks: {
+              website: 'https://mint.app',
+              twitter: 'https://x.com/mint'
+            },
+            createdAt: nowIso,
+            profileCompleted: true
+          };
+          parsed.users.push(mintUserAcc);
+        } else {
+          mintUserAcc.username = 'mint';
+          mintUserAcc.displayName = 'MINT';
+          mintUserAcc.role = 'trusted_mint_account';
+          mintUserAcc.privilegedType = 'trusted_mint_account';
+          mintUserAcc.isPrivileged = true;
+          mintUserAcc.isVerified = true;
+          mintUserAcc.isFoundingMember = true;
+          mintUserAcc.plan = 'unlimited';
+          mintUserAcc.bot_unlimited = true;
+          mintUserAcc.beta_access = true;
+          mintUserAcc.usernameColor = '#ff5500';
+          if (!mintUserAcc.entitlement) {
+            mintUserAcc.entitlement = { tier: 'unlimited', bot_unlimited: true };
+          }
+        }
+
+        // Ensure passwords for privileged accounts in database
+        if (!parsed.userPasswords) parsed.userPasswords = {};
+        const defaultHash = bcrypt.hashSync('EntAlgo2026!', 10);
+        if (ownerUser && !parsed.userPasswords[ownerUser.id]) {
+          parsed.userPasswords[ownerUser.id] = defaultHash;
+        }
+        if (mintUserAcc && !parsed.userPasswords[mintUserAcc.id]) {
+          parsed.userPasswords[mintUserAcc.id] = defaultHash;
         }
         if (!parsed.config.maxBioLength) parsed.config.maxBioLength = 160;
         if (!parsed.config.maxAccountsPerDevice) parsed.config.maxAccountsPerDevice = 3;
 
         if (!parsed.config.launchConfig) {
           parsed.config.launchConfig = {
-            collectionCreationFeeSol: 0.05,
-            estimatedNetworkFeeSol: 0.012,
+            collectionCreationFeeSol: 2.5,
+            estimatedNetworkFeeSol: 0.001,
             minSupply: 1,
             maxSupply: 10000,
             minMintPriceSol: 0,
-            maxMintPriceSol: 100,
+            maxMintPriceSol: 5000,
             maxRoyaltyPercent: 15,
             defaultWalletLimit: 5,
             maxWalletLimit: 50,
-            allowedCurrencies: ['SOL', 'USDC']
+            allowedCurrencies: ['ALGO', 'USDC']
           };
         }
         this.save(parsed);

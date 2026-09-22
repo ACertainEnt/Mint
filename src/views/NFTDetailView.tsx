@@ -81,7 +81,7 @@ export const NFTDetailView: React.FC<NFTDetailViewProps> = ({
   if (loading) {
     return (
       <div className="py-24 text-center text-xs font-mono-code text-[#8e97a8]">
-        Fetching on-chain artifact data from Solana...
+        Fetching on-chain artifact data from Algorand...
       </div>
     );
   }
@@ -246,7 +246,7 @@ export const NFTDetailView: React.FC<NFTDetailViewProps> = ({
                   <span className="text-xs font-mono-code text-amber-400 font-bold">{auction.bidCount} Bids</span>
                 </div>
                 <div className="text-2xl font-mono-code font-extrabold text-amber-400 mb-4">
-                  {auction.currentBid} SOL
+                  {auction.currentBid} ALGO
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -269,7 +269,7 @@ export const NFTDetailView: React.FC<NFTDetailViewProps> = ({
               <div>
                 <div className="text-xs font-mono-code text-[#8e97a8] mb-1">BUY NOW PRICE</div>
                 <div className="text-2xl font-mono-code font-extrabold text-[#ff5500] mb-4">
-                  {nft.price} SOL
+                  {nft.price} ALGO
                 </div>
 
                 {isOwner ? (
@@ -285,7 +285,7 @@ export const NFTDetailView: React.FC<NFTDetailViewProps> = ({
                     className="w-full py-3 rounded-xl bg-[#ff5500] hover:bg-[#e64d00] text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[#ff5500]/25"
                   >
                     <Tag size={16} />
-                    <span>Instant Buy for {nft.price} SOL</span>
+                    <span>Instant Buy for {nft.price} ALGO</span>
                   </button>
                 )}
               </div>
@@ -348,10 +348,10 @@ export const NFTDetailView: React.FC<NFTDetailViewProps> = ({
           {/* On-Chain Token Details */}
           <div className="p-4 rounded-xl bg-[#11141a] border border-[#212634] space-y-2 text-xs font-mono-code">
             <div className="flex items-center justify-between text-[#8e97a8]">
-              <span>Mint Address:</span>
+              <span>Asset ID / Mint:</span>
               {nft.tokenAddress ? (
                 <a
-                  href={`https://explorer.solana.com/address/${nft.tokenAddress}?cluster=devnet`}
+                  href={`https://testnet.explorer.perawallet.app/asset/${nft.tokenAddress}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-white hover:text-[#ff5500] hover:underline flex items-center gap-1"
@@ -364,16 +364,16 @@ export const NFTDetailView: React.FC<NFTDetailViewProps> = ({
               )}
             </div>
             <div className="flex items-center justify-between text-[#8e97a8]">
-              <span>Contract / Program:</span>
+              <span>Contract / Application:</span>
               {(() => {
                 const targetAddr = nft.contractAddress || collection?.contractAddress || nft.tokenAddress;
                 if (!targetAddr) {
-                  return <span className="text-[#8e97a8]">Solana Devnet Program</span>;
+                  return <span className="text-[#8e97a8]">Algorand ARC-0003 Standard</span>;
                 }
                 const displayAddr = targetAddr.length >= 12 ? `${targetAddr.slice(0, 6)}...${targetAddr.slice(-6)}` : targetAddr;
                 return (
                   <a
-                    href={`https://explorer.solana.com/address/${targetAddr}?cluster=devnet`}
+                    href={`https://testnet.explorer.perawallet.app/address/${targetAddr}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#ff5500] hover:underline flex items-center gap-1"
@@ -386,7 +386,7 @@ export const NFTDetailView: React.FC<NFTDetailViewProps> = ({
             </div>
             <div className="flex items-center justify-between text-[#8e97a8]">
               <span>Network:</span>
-              <span className="text-emerald-400">Solana Devnet</span>
+              <span className="text-emerald-400">Algorand Testnet</span>
             </div>
           </div>
         </div>
@@ -400,13 +400,13 @@ export const NFTDetailView: React.FC<NFTDetailViewProps> = ({
               List Item for Sale
             </h2>
             <p className="text-xs text-[#9ca3af] mb-4">
-              Set your fixed listing price in SOL. Buyers can instantly purchase your NFT.
+              Set your fixed listing price in ALGO. Buyers can instantly purchase your NFT.
             </p>
 
             <form onSubmit={handleListForSale} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-[#8e97a8] mb-1">
-                  Listing Price (SOL) *
+                  Listing Price (ALGO) *
                 </label>
                 <div className="relative">
                   <input
@@ -419,7 +419,7 @@ export const NFTDetailView: React.FC<NFTDetailViewProps> = ({
                     className="w-full bg-[#161a22] border border-[#232938] rounded-lg px-3 py-2 text-sm text-white font-mono-code font-bold focus:outline-none focus:border-[#ff5500]"
                   />
                   <span className="absolute right-3 top-2.5 text-xs font-mono-code text-[#ff5500] font-bold">
-                    SOL
+                    ALGO
                   </span>
                 </div>
               </div>

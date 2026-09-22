@@ -134,8 +134,8 @@ nftsRouter.post('/collections', requireAuth, (req: AuthenticatedRequest, res) =>
 
   const user = req.user!;
 
-  // Generate Solana base58-like contract address
-  const randomAddress = `Col${crypto.randomBytes(16).toString('hex').slice(0, 32)}`;
+  // Generate Algorand asset contract address
+  const randomAddress = `COL${crypto.randomBytes(16).toString('hex').slice(0, 32).toUpperCase()}`;
   const collectionId = `col_${cleanSymbol.toLowerCase()}_${crypto.randomBytes(4).toString('hex')}`;
 
   const newCollection: NFTCollection = {
@@ -282,7 +282,7 @@ nftsRouter.post('/nfts/mint', requireAuth, (req: AuthenticatedRequest, res) => {
     collectionName: collection.name,
     collectionSymbol: collection.symbol,
     name: `${collection.name} #${mintIndex.toString().padStart(3, '0')}`,
-    description: `Original edition #${mintIndex} minted from the verified ${collection.name} collection on Solana.`,
+    description: `Original edition #${mintIndex} minted from the verified ${collection.name} collection on Algorand.`,
     image: collection.image,
     tokenAddress,
     creatorId: collection.creatorId,
@@ -291,7 +291,7 @@ nftsRouter.post('/nfts/mint', requireAuth, (req: AuthenticatedRequest, res) => {
     creatorAvatar: collection.image,
     creatorVerified: collection.isVerified,
     ownerId: user.id,
-    ownerAddress: user.walletAddress || 'Solana_Devnet_Holder',
+    ownerAddress: user.walletAddress || 'Algorand_Testnet_Holder',
     ownerUsername: user.username,
     isListed: false,
     isInAuction: false,
@@ -303,7 +303,7 @@ nftsRouter.post('/nfts/mint', requireAuth, (req: AuthenticatedRequest, res) => {
     createdAt: new Date().toISOString(),
     views: 1,
     likes: 0,
-    blockchain: 'Solana'
+    blockchain: 'Algorand'
   };
 
   collection.mintedSupply += 1;
@@ -459,7 +459,7 @@ nftsRouter.post('/nfts/:id/buy', requireAuth, (req: AuthenticatedRequest, res) =
 
   // Transfer ownership
   nft.ownerId = buyer.id;
-  nft.ownerAddress = buyer.walletAddress || 'Solana_Devnet_Holder';
+  nft.ownerAddress = buyer.walletAddress || 'Algorand_Testnet_Holder';
   nft.ownerUsername = buyer.username;
   nft.isListed = false;
   nft.price = undefined;

@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Platform admin/owner verification based on Firebase UID / custom claims or token
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.role == 'owner' ||
+        request.auth.token.email == 'pervercy23@gmail.com' ||
+        request.auth.token.email == 'fahudmajed@gmail.com'
+      );
+    }
+
+    // Waitlist collection:
+    // Anyone can create a waitlist entry with valid non-empty email.
+    // Public cannot set hasRedeemedBeta to true or modify existing waitlist records.
+    // Public cannot read, update, or delete waitlist entries.
+    // Only platform admins can view, update, or manage waitlist entries.
+    match /waitlist/{entryId} {
+      allow create: if request.resource.data.email is string &&
+                       request.resource.data.email.size() > 3 &&
+                       request.resource.data.email.size() <= 255 &&
+                       (!('hasRedeemedBeta' in request.resource.data) || request.resource.data.hasRedeemedBeta == false);
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Beta codes collection:
+    // Only administrators can list, create, or update beta codes.
+    // Individual users can read a code doc if they are authenticated and it's assigned to their email.
+    match /beta_codes/{codeId} {
+      allow read: if isAdmin() || (
+        isSignedIn() &&
+        resource.data.assignedEmail != null &&
+        resource.data.assignedEmail == request.auth.token.email
+      );
+      allow write: if isAdmin();
+    }
+
+    // Users collection:
+    // Anyone can read public user profiles.
+    // Users can only update their own display name, avatar, bio, or social links.
+    // Sensitive fields (role, isPrivileged, isVerified, beta_access, username) cannot be self-modified.
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId) &&
+                       !('isPrivileged' in request.resource.data && request.resource.data.isPrivileged == true) &&
+                       !('isVerified' in request.resource.data && request.resource.data.isVerified == true) &&
+                       !('beta_access' in request.resource.data && request.resource.data.beta_access == true);
+      allow update: if (isOwner(userId) &&
+                        !request.resource.data.diff(resource.data).affectedKeys()
+                          .hasAny(['role', 'isPrivileged', 'isVerified', 'beta_access', 'privilegedType', 'username'])) ||
+                       isAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}

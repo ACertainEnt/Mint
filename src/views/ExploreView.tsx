@@ -65,7 +65,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-white">
-            Explore Solana Marketplace
+            Explore Algorand Marketplace
           </h1>
           <p className="text-xs sm:text-sm text-[#9ca3af] mt-1">
             Discover artifacts, verify on-chain metadata, and trade with sub-second finality.

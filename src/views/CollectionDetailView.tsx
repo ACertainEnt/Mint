@@ -25,7 +25,7 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({
   onNavigate
 }) => {
   const { user, setShowAuthModal } = useAuth();
-  const { connected, balance, sendSolTransaction, connect } = useWallet();
+  const { connected, balance, sendTransaction, connect } = useWallet();
 
   const [collection, setCollection] = useState<NFTCollection | null>(null);
   const [nfts, setNfts] = useState<NFT[]>([]);
@@ -55,7 +55,7 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({
   if (loading) {
     return (
       <div className="py-24 text-center text-xs font-mono-code text-[#8e97a8]">
-        Loading collection details & Solana token metadata...
+        Loading collection details & Algorand token metadata...
       </div>
     );
   }
@@ -87,9 +87,9 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({
       }
 
       const totalCost = Number((collection.mintPrice * mintQuantity).toFixed(3));
-      // Real Solana transaction transfer to creator address or treasury
-      const txRes = await sendSolTransaction(
-        collection.creatorAddress || 'ACEp1aTfX7h8Kq3w9uV4y2z5L1m6NoP8qRsTuVwXyZ',
+      // Algorand transaction transfer to creator address or treasury
+      const txRes = await sendTransaction(
+        collection.creatorAddress || 'ACEALGORANDTESTNETVALIDATORCREATOR7XQP9KLM1VOS3W2YRT7UABCD',
         totalCost,
         `Mint ${mintQuantity}x ${collection.name}`
       );
@@ -202,12 +202,12 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({
               </button>
             )}
             <a
-              href={`https://explorer.solana.com/address/${collection.contractAddress}?cluster=devnet`}
+              href={`https://testnet.explorer.perawallet.app/address/${collection.contractAddress}`}
               target="_blank"
               rel="noopener noreferrer"
               className="px-3 py-2 rounded-lg bg-[#141822] hover:bg-[#1b212e] border border-[#212634] text-xs font-mono-code text-[#ff8c4d] transition-colors flex items-center gap-1.5"
             >
-              <span>Solana Contract</span>
+              <span>Algorand Contract</span>
               <ExternalLink size={12} />
             </a>
           </div>
@@ -226,13 +226,13 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({
             <div>
               <div className="text-[10px] font-mono-code text-[#6b7280]">FLOOR PRICE</div>
               <div className="text-sm sm:text-base font-mono-code font-bold text-[#ff5500]">
-                {collection.floorPrice || collection.mintPrice} SOL
+                {collection.floorPrice || collection.mintPrice} ALGO
               </div>
             </div>
             <div>
               <div className="text-[10px] font-mono-code text-[#6b7280]">TOTAL VOLUME</div>
               <div className="text-sm sm:text-base font-mono-code font-bold text-white">
-                {collection.totalVolume || 0} SOL
+                {collection.totalVolume || 0} ALGO
               </div>
             </div>
             <div>
@@ -268,7 +268,7 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-[#8e97a8]">Price per item:</span>
-                <span className="font-mono-code font-bold text-white">{collection.mintPrice} SOL</span>
+                <span className="font-mono-code font-bold text-white">{collection.mintPrice} ALGO</span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
@@ -282,7 +282,7 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({
                 className="w-full py-3 rounded-xl bg-[#ff5500] hover:bg-[#e64d00] disabled:opacity-50 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-[#ff5500]/25 flex items-center justify-center gap-2"
               >
                 <Sparkles size={15} />
-                <span>{minting ? 'Minting On Solana...' : `Mint 1 NFT for ${collection.mintPrice} SOL`}</span>
+                <span>{minting ? 'Minting On Algorand...' : `Mint 1 NFT for ${collection.mintPrice} ALGO`}</span>
               </button>
             </div>
           )}

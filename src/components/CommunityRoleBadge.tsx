@@ -67,7 +67,7 @@ export const COLOR_OPTIONS = [
   { id: 'yellow', label: 'Bright Gold', hex: '#eab308' },
   { id: 'emerald', label: 'Emerald Green', hex: '#10b981' },
   { id: 'cyan', label: 'Cyan Blue', hex: '#06b6d4' },
-  { id: 'blue', label: 'Solana Blue', hex: '#3b82f6' },
+  { id: 'blue', label: 'Cobalt Blue', hex: '#3b82f6' },
   { id: 'indigo', label: 'Royal Indigo', hex: '#6366f1' },
   { id: 'purple', label: 'Vibrant Purple', hex: '#8b5cf6' },
   { id: 'pink', label: 'Hot Pink', hex: '#ec4899' },

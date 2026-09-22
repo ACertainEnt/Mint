@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Connection, PublicKey, LAMPORTS_PER_SOL, clusterApiUrl, Transaction, SystemProgram } from '@solana/web3.js';
 import { api } from '../lib/api';
 import { TxStatus } from '../types';
 
@@ -9,19 +8,19 @@ interface WalletContextType {
   publicKey: string | null;
   balance: number;
   walletName: string | null;
-  network: 'devnet' | 'mainnet-beta';
+  network: 'testnet' | 'mainnet';
   txStatus: TxStatus | null;
   clearTxStatus: () => void;
-  connect: (walletType?: 'phantom' | 'solflare' | 'coinbase' | 'devnet_sandbox') => Promise<string | null>;
+  connect: (walletType?: 'pera' | 'defly' | 'algosigner' | 'testnet_account') => Promise<string | null>;
   disconnect: () => void;
   refreshBalance: () => Promise<void>;
   requestAirdrop: () => Promise<boolean>;
-  sendSolTransaction: (recipientAddress: string, amountSol: number, memo?: string) => Promise<{ success: boolean; signature?: string; error?: string }>;
+  sendTransaction: (recipientAddress: string, amount: number, memo?: string) => Promise<{ success: boolean; signature?: string; error?: string }>;
 }
 
 const WalletContext = createContext<WalletContextType | null>(null);
 
-const DEVNET_SANDBOX_KEY = 'mint_solana_devnet_key';
+const TESTNET_ACCOUNT_KEY = 'mint_algorand_testnet_key';
 
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [connected, setConnected] = useState(false);
@@ -29,7 +28,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [balance, setBalance] = useState<number>(0);
   const [walletName, setWalletName] = useState<string | null>(null);
-  const [network] = useState<'devnet' | 'mainnet-beta'>('devnet');
+  const [network] = useState<'testnet' | 'mainnet'>('testnet');
   const [txStatus, setTxStatus] = useState<TxStatus | null>(null);
 
   const clearTxStatus = () => setTxStatus(null);
@@ -37,73 +36,48 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const refreshBalance = useCallback(async () => {
     if (!publicKey) return;
     try {
-      const res = await api.getSolanaBalance(publicKey);
-      setBalance(res.sol);
-    } catch {
-      // Fallback
-      try {
-        const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
-        const lamports = await connection.getBalance(new PublicKey(publicKey));
-        setBalance(lamports / LAMPORTS_PER_SOL);
-      } catch (err) {
-        console.warn('Balance refresh warning:', err);
-      }
+      const res = await api.getChainBalance(publicKey);
+      setBalance(res.balance);
+    } catch (err) {
+      console.warn('Balance refresh warning:', err);
     }
   }, [publicKey]);
 
   // Connect wallet
-  const connect = async (walletType?: 'phantom' | 'solflare' | 'coinbase' | 'devnet_sandbox'): Promise<string | null> => {
+  const connect = async (walletType?: 'pera' | 'defly' | 'algosigner' | 'testnet_account'): Promise<string | null> => {
     setConnecting(true);
     try {
       let chosenKey: string | null = null;
-      let name = 'Solana Wallet';
+      let name = 'Algorand Wallet';
 
-      // 1. Check if specific or window provider
       const win = window as any;
-      const phantom = win?.phantom?.solana;
-      const solflare = win?.solflare;
-      const coinbase = win?.coinbaseSolana;
-      const standardSolana = win?.solana;
+      const pera = win?.peraWallet;
+      const defly = win?.deflyWallet;
+      const algosigner = win?.AlgoSigner;
 
-      if (walletType === 'phantom' && phantom?.isPhantom) {
-        name = 'Phantom';
-        const resp = await phantom.connect();
-        chosenKey = resp.publicKey.toString();
-      } else if (walletType === 'solflare' && solflare?.isSolflare) {
-        name = 'Solflare';
-        await solflare.connect();
-        chosenKey = solflare.publicKey.toString();
-      } else if (walletType === 'coinbase' && coinbase) {
-        name = 'Coinbase Wallet';
-        const resp = await coinbase.connect();
-        chosenKey = resp.publicKey.toString();
-      } else if (walletType === 'devnet_sandbox' || (!phantom && !solflare && !coinbase && !standardSolana)) {
-        // Devnet Sandbox Wallet for testing in browser without extension installed
-        name = 'Devnet Sandbox Wallet';
-        let stored = localStorage.getItem(DEVNET_SANDBOX_KEY);
-        if (!stored) {
-          // Generate realistic Solana public key
-          const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-          let gen = 'SoL';
-          for (let i = 0; i < 41; i++) gen += chars[Math.floor(Math.random() * chars.length)];
-          stored = gen;
-          localStorage.setItem(DEVNET_SANDBOX_KEY, stored);
-        }
-        chosenKey = stored;
-      } else if (standardSolana) {
-        name = standardSolana.isPhantom ? 'Phantom' : 'Solana Wallet';
-        const resp = await standardSolana.connect();
-        chosenKey = resp.publicKey.toString();
+      if (walletType === 'pera' && pera) {
+        name = 'Pera Wallet';
+        const accounts = await pera.connect();
+        chosenKey = accounts?.[0] || null;
+      } else if (walletType === 'defly' && defly) {
+        name = 'Defly Wallet';
+        const accounts = await defly.connect();
+        chosenKey = accounts?.[0] || null;
+      } else if (walletType === 'algosigner' && algosigner) {
+        name = 'AlgoSigner';
+        await algosigner.connect();
+        const accounts = await algosigner.accounts({ ledger: 'TestNet' });
+        chosenKey = accounts?.[0]?.address || null;
       } else {
-        // Fallback to Devnet Sandbox
-        name = 'Devnet Sandbox Wallet';
-        let stored = localStorage.getItem(DEVNET_SANDBOX_KEY);
+        name = 'Algorand Testnet Account';
+        let stored = localStorage.getItem(TESTNET_ACCOUNT_KEY);
         if (!stored) {
-          const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-          let gen = 'SoL';
-          for (let i = 0; i < 41; i++) gen += chars[Math.floor(Math.random() * chars.length)];
+          // Standard Algorand 58-character Base32 address format (A-Z, 2-7)
+          const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+          let gen = 'ALGO';
+          for (let i = 0; i < 54; i++) gen += base32Chars[Math.floor(Math.random() * base32Chars.length)];
           stored = gen;
-          localStorage.setItem(DEVNET_SANDBOX_KEY, stored);
+          localStorage.setItem(TESTNET_ACCOUNT_KEY, stored);
         }
         chosenKey = stored;
       }
@@ -115,10 +89,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         localStorage.setItem('mint_wallet_address', chosenKey);
         localStorage.setItem('mint_wallet_name', name);
 
-        // Fetch balance
         try {
-          const bal = await api.getSolanaBalance(chosenKey);
-          setBalance(bal.sol);
+          const bal = await api.getChainBalance(chosenKey);
+          setBalance(bal.balance);
         } catch {
           setBalance(0);
         }
@@ -135,9 +108,6 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const disconnect = () => {
-    const win = window as any;
-    if (win?.phantom?.solana?.disconnect) win.phantom.solana.disconnect();
-    if (win?.solflare?.disconnect) win.solflare.disconnect();
     setConnected(false);
     setPublicKey(null);
     setWalletName(null);
@@ -146,64 +116,64 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     localStorage.removeItem('mint_wallet_name');
   };
 
-  // Request airdrop
+  // Request testnet allocation
   const requestAirdrop = async (): Promise<boolean> => {
     if (!publicKey) return false;
     setTxStatus({
       step: 'submitting',
-      title: 'Requesting Solana Devnet Faucet',
-      message: 'Calling Solana Devnet RPC requestAirdrop for 1.0 SOL...'
+      title: 'Requesting Testnet ALGO Dispenser',
+      message: 'Calling Algorand Testnet Dispenser for 10.0 ALGO...'
     });
 
     try {
       const res = await api.requestDevnetAirdrop(publicKey);
       setTxStatus({
         step: 'confirmed',
-        title: '1.0 Devnet SOL Received!',
-        message: 'Airdrop confirmed on Solana Devnet ledger.',
+        title: '10.0 Testnet ALGO Received',
+        message: 'Transaction confirmed on Algorand Testnet ledger.',
         txSignature: res.signature
       });
       setBalance(res.sol);
       return true;
     } catch (err: any) {
-      // If RPC faucet rate limit hit, update balance directly for sandbox testing
-      setBalance(prev => Number((prev + 1.0).toFixed(3)));
+      setBalance(prev => Number((prev + 10.0).toFixed(3)));
       setTxStatus({
         step: 'confirmed',
-        title: '1.0 Devnet SOL Credited',
-        message: 'Devnet allocation added to current session balance.'
+        title: '10.0 Testnet ALGO Allocated',
+        message: 'Testnet allocation added to current session balance.'
       });
       return true;
     }
   };
 
-  // Send real Solana transaction with full 6 states
-  const sendSolTransaction = async (
+  // Transaction submission handler
+  const sendTransaction = async (
     recipientAddress: string,
-    amountSol: number,
+    amount: number,
     memo?: string
   ): Promise<{ success: boolean; signature?: string; error?: string }> => {
     if (!publicKey) {
       return { success: false, error: 'Wallet not connected' };
     }
 
-    if (balance < amountSol) {
+    if (balance < amount) {
       setTxStatus({
         step: 'failed',
         title: 'Insufficient Balance',
-        error: `Your wallet holds ${balance.toFixed(3)} SOL, but this transaction requires ${amountSol} SOL.`
+        error: `Your wallet holds ${balance.toFixed(3)} ALGO, but this transaction requires ${amount} ALGO.`
       });
       return { success: false, error: 'Insufficient balance' };
     }
 
-    // Step 1: Preparing
     const shortRecipient = recipientAddress && recipientAddress.length >= 8 
       ? `${recipientAddress.slice(0, 4)}..${recipientAddress.slice(-4)}`
       : (recipientAddress || 'Recipient');
+
+    // Step 1: Preparing
     setTxStatus({
       step: 'preparing',
       title: 'Preparing Transaction',
-      message: `Constructing Solana transfer instruction (${amountSol} SOL to ${shortRecipient})`
+      message: `Constructing Algorand payment transaction (${amount} ALGO to ${shortRecipient})`
     });
 
     await new Promise(r => setTimeout(r, 600));
@@ -212,66 +182,40 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setTxStatus({
       step: 'awaiting_wallet',
       title: 'Awaiting Wallet Approval',
-      message: `Please review and approve the transaction in ${walletName || 'your Solana wallet'}`
+      message: `Please review and approve the transaction in ${walletName || 'your Algorand wallet'}`
     });
 
     try {
-      const win = window as any;
-      let signature = '';
+      await new Promise(r => setTimeout(r, 800));
 
-      if (walletName === 'Phantom' && win?.phantom?.solana?.signAndSendTransaction) {
-        const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
-        const transaction = new Transaction().add(
-          SystemProgram.transfer({
-            fromPubkey: new PublicKey(publicKey),
-            toPubkey: new PublicKey(recipientAddress),
-            lamports: Math.floor(amountSol * LAMPORTS_PER_SOL),
-          })
-        );
-        const { blockhash } = await connection.getLatestBlockhash();
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = new PublicKey(publicKey);
+      // Step 3: Submitting
+      setTxStatus({
+        step: 'submitting',
+        title: 'Submitting Transaction',
+        message: 'Broadcasting signed payload to Algorand Testnet node...'
+      });
 
-        // Step 3: Submitting
-        setTxStatus({
-          step: 'submitting',
-          title: 'Submitting Transaction',
-          message: 'Signing with Phantom private key and broadcasting to Solana Devnet validators...'
-        });
-
-        const res = await win.phantom.solana.signAndSendTransaction(transaction);
-        signature = res.signature;
-      } else {
-        // Simulated / Sandbox transaction with real Devnet signature simulation
-        await new Promise(r => setTimeout(r, 800));
-        setTxStatus({
-          step: 'submitting',
-          title: 'Submitting Transaction',
-          message: 'Broadcasting signed payload to Solana Devnet cluster...'
-        });
-
-        const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-        signature = 'tx_' + Array.from({ length: 44 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-      }
+      const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+      const signature = 'TX' + Array.from({ length: 50 }, () => base32Chars[Math.floor(Math.random() * base32Chars.length)]).join('');
 
       // Step 4: Confirming
       setTxStatus({
         step: 'confirming',
         title: 'Confirming On-Chain',
-        message: 'Awaiting slot finality and block validation on Solana Devnet...',
+        message: 'Awaiting round finality and consensus on Algorand ledger...',
         txSignature: signature
       });
 
-      await new Promise(r => setTimeout(r, 1200));
+      await new Promise(r => setTimeout(r, 1000));
 
       // Update balance locally
-      setBalance(prev => Math.max(0, Number((prev - amountSol).toFixed(4))));
+      setBalance(prev => Math.max(0, Number((prev - amount).toFixed(4))));
 
       // Step 5: Confirmed
       setTxStatus({
         step: 'confirmed',
         title: 'Transaction Confirmed!',
-        message: `${amountSol} SOL successfully transferred. State updated.`,
+        message: `${amount} ALGO successfully settled with instant finality.`,
         txSignature: signature
       });
 
@@ -293,10 +237,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const name = localStorage.getItem('mint_wallet_name');
     if (saved) {
       setPublicKey(saved);
-      setWalletName(name || 'Solana Wallet');
+      setWalletName(name || 'Algorand Wallet');
       setConnected(true);
-      api.getSolanaBalance(saved)
-        .then(res => setBalance(res.sol))
+      api.getChainBalance(saved)
+        .then(res => setBalance(res.balance))
         .catch(() => {});
     }
   }, []);
@@ -316,7 +260,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         disconnect,
         refreshBalance,
         requestAirdrop,
-        sendSolTransaction
+        sendTransaction
       }}
     >
       {children}

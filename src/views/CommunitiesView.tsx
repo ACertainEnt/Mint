@@ -124,7 +124,21 @@ export const CommunitiesView: React.FC<CommunitiesViewProps> = ({ onNavigate, on
   const [postCooldownTimer, setPostCooldownTimer] = useState(0);
 
   // Ownership & Role checks
-  const isPlatformOwner = user && (user.role === 'owner' || user.role === 'admin' || user.email === 'pervercy23@gmail.com');
+  const isPlatformOwner = user && (
+    user.role === 'owner' ||
+    user.role === 'platform_owner' ||
+    user.role === 'admin' ||
+    user.privilegedType === 'platform_owner' ||
+    user.privilegedType === 'trusted_mint_account' ||
+    user.isPrivileged === true
+  );
+
+  const isMintRestricted = useMemo(() => {
+    if (isPlatformOwner) return false;
+    const nameHasMint = newCommunityName.toLowerCase().includes('mint');
+    const handleHasMint = newCommunityHandle.toLowerCase().includes('mint');
+    return nameHasMint || handleHasMint;
+  }, [newCommunityName, newCommunityHandle, isPlatformOwner]);
   const isCreator = selectedCommunity && user && (selectedCommunity.creatorId === user.id || selectedCommunity.creatorId === user.email);
   const isOwner = selectedCommunity && user && (selectedCommunity.creatorId === user.id || isPlatformOwner);
   const isModerator = selectedCommunity && user && members.some(m => m.communityId === selectedCommunity.id && m.userId === user.id && m.communityRole === 'moderator');
@@ -244,6 +258,12 @@ export const CommunitiesView: React.FC<CommunitiesViewProps> = ({ onNavigate, on
   const handleCreateCommunitySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCommunityName.trim() || creatingCommunity) return;
+
+    // Check for reserved community names
+    if (isMintRestricted) {
+      setCreateError("That community name is reserved by MINT.");
+      return;
+    }
 
     setCreatingCommunity(true);
     setCreateError(null);
@@ -1280,6 +1300,9 @@ export const CommunitiesView: React.FC<CommunitiesViewProps> = ({ onNavigate, on
                   required
                   className="w-full bg-[#1c1c1c] border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-[#ff5500]"
                 />
+                {isMintRestricted && (
+                  <p className="text-xs text-red-400 font-mono mt-1">That community name is reserved by MINT.</p>
+                )}
               </div>
 
               <div>
@@ -1351,7 +1374,7 @@ export const CommunitiesView: React.FC<CommunitiesViewProps> = ({ onNavigate, on
                 <button
                   type="submit"
                   id="confirm-create-community-btn"
-                  disabled={creatingCommunity || !newCommunityName.trim() || (creationStatus !== null && !creationStatus.canCreate)}
+                  disabled={creatingCommunity || !newCommunityName.trim() || isMintRestricted || (creationStatus !== null && !creationStatus.canCreate)}
                   className="px-5 py-2 bg-[#ff5500] hover:bg-[#ff661a] disabled:opacity-50 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-[#ff5500]/25 flex items-center gap-2"
                 >
                   {creatingCommunity ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Create Community</span>}

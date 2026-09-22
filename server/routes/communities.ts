@@ -2,13 +2,14 @@ import { Router } from 'express';
 import { db } from '../db';
 import { AuthenticatedRequest, requireAuth } from '../middleware/auth';
 import { Community, CommunityMember, VerificationRequest } from '../../src/types';
+import { isPrivilegedAccount, isExemptFromCooldowns, isPlatformOwner } from '../utils/privileges';
+import { validateCommunityNameProtection } from '../utils/usernameProtection';
 
 export const communitiesRouter = Router();
 
 // Helper to check if user has platform owner or admin privileges
-function isPlatformOwnerOrAdmin(user?: { role?: string; email?: string }): boolean {
-  if (!user) return false;
-  return user.role === 'owner' || user.role === 'admin' || user.email === 'pervercy23@gmail.com';
+function isPlatformOwnerOrAdmin(user?: any): boolean {
+  return isPrivilegedAccount(user);
 }
 
 // Helper to enrich community with current user's membership status
@@ -102,8 +103,21 @@ communitiesRouter.post('/', requireAuth, (req: AuthenticatedRequest, res) => {
     return res.status(400).json({ error: 'Community name is required' });
   }
 
-  // Authoritative Cooldown check for normal users (Platform owner is exempt)
-  if (!isPlatformOwnerOrAdmin(user)) {
+  // Validate community name against protected MINT brand reservations
+  const nameCheck = validateCommunityNameProtection(name.trim(), user);
+  if (!nameCheck.allowed) {
+    return res.status(400).json({ error: nameCheck.error || 'That community name is reserved by MINT.' });
+  }
+
+  if (handle) {
+    const handleCheck = validateCommunityNameProtection(handle.trim(), user);
+    if (!handleCheck.allowed) {
+      return res.status(400).json({ error: handleCheck.error || 'That community name is reserved by MINT.' });
+    }
+  }
+
+  // Authoritative Cooldown check for normal users (Privileged accounts are exempt)
+  if (!isExemptFromCooldowns(user)) {
     const userCommunities = (database.communities || [])
       .filter(c => c.creatorId === user.id)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

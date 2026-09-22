@@ -156,7 +156,7 @@ export const CreatorProfileView: React.FC<CreatorProfileViewProps> = ({
                     ? profileUser.walletAddress.length >= 12
                       ? `${profileUser.walletAddress.slice(0, 6)}...${profileUser.walletAddress.slice(-6)}`
                       : profileUser.walletAddress
-                    : 'Solana Devnet'}
+                    : 'Algorand Testnet'}
                 </span>
               </div>
             </div>

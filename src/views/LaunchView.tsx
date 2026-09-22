@@ -75,7 +75,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
   // STEP 2 — Collection Configuration State
   const [totalSupply, setTotalSupply] = useState<string>('250');
   const [mintPrice, setMintPrice] = useState<string>('0.25');
-  const [currency, setCurrency] = useState<'SOL' | 'USDC'>('SOL');
+  const [currency, setCurrency] = useState<'ALGO' | 'USDC'>('ALGO');
   const [royaltyFee, setRoyaltyFee] = useState<string>('5.0');
   const [hasWalletLimit, setHasWalletLimit] = useState(true);
   const [walletMintLimit, setWalletMintLimit] = useState<string>('5');
@@ -132,7 +132,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
     maxRoyaltyPercent: 15,
     defaultWalletLimit: 5,
     maxWalletLimit: 50,
-    allowedCurrencies: ['SOL', 'USDC']
+    allowedCurrencies: ['ALGO', 'USDC']
   };
 
   // Upfront fee calculations
@@ -184,18 +184,18 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
   const previewCollection: NFTCollection = {
     id: 'col_preview',
     creatorId: user?.id || 'usr_preview',
-    creatorAddress: publicKey || 'Solana_Devnet_Creator',
+    creatorAddress: publicKey || 'Algorand_Testnet_Creator',
     creatorUsername: user?.username || 'creator',
     name: name.trim() || 'Untitled Collection',
     symbol: (symbol.trim() || 'MINT').toUpperCase(),
-    description: description.trim() || 'Your custom procedural collection on the Solana blockchain.',
+    description: description.trim() || 'Your custom procedural collection on the Algorand blockchain.',
     image: image || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop&q=80',
     banner: banner || image || 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=1200&auto=format&fit=crop&q=80',
     totalSupply: isSupplyValid ? numSupply : 100,
     mintedSupply: 0,
     mintPrice: isPriceValid ? numPrice : 0.1,
     royaltyFee: isRoyaltyValid ? numRoyalty : 5,
-    contractAddress: 'SoL_Devnet_DeployPending...',
+    contractAddress: 'ALGO_Testnet_DeployPending...',
     isVerified: !!user?.isVerified,
     floorPrice: isPriceValid ? numPrice : 0.1,
     totalVolume: 0,
@@ -257,7 +257,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
       // Check wallet balance
       if (balance < creationFee) {
         setLaunchButtonState('failed');
-        setLaunchError(`Insufficient Devnet SOL balance (${balance.toFixed(4)} SOL). Minimum required: ${creationFee} SOL.`);
+        setLaunchError(`Insufficient Testnet ALGO balance (${balance.toFixed(4)} ALGO). Minimum required: ${creationFee} ALGO.`);
         return;
       }
 
@@ -269,7 +269,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
       // Button State: PROCESSING
       setLaunchButtonState('processing');
 
-      // Execute on-chain deployment fee transfer on Solana Devnet
+      // Execute on-chain deployment fee transfer on Algorand Testnet
       const txResult = await sendSolTransaction(
         treasury,
         creationFee,
@@ -277,7 +277,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
       );
 
       if (!txResult.success) {
-        throw new Error(txResult.error || 'Solana transaction rejected or failed to confirm on Devnet.');
+        throw new Error(txResult.error || 'Algorand transaction rejected or failed to confirm on Testnet.');
       }
 
       // Create collection on backend with verified signature
@@ -326,18 +326,18 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
               Launch NFT Collection
             </h1>
             <span className="px-2 py-0.5 rounded bg-[#ff5500]/15 border border-[#ff5500]/30 text-[#ff8c4d] text-[10px] font-mono-code font-bold uppercase">
-              Solana Devnet
+              Algorand Testnet
             </span>
           </div>
           <p className="text-xs sm:text-sm text-[#8e97a8] mt-1">
-            Deploy an authentic verified NFT collection with candy machine parameters and transparent fees.
+            Deploy an authentic verified NFT collection with ASA parameters and transparent fees.
           </p>
         </div>
 
         {/* Protocol Fee Tag */}
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#141822] border border-[#212634] text-xs font-mono-code text-[#ff8c4d] self-start sm:self-auto">
           <Coins size={14} />
-          <span>Deploy: {creationFee} SOL</span>
+          <span>Deploy: {creationFee} ALGO</span>
         </div>
       </div>
 
@@ -693,7 +693,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
                     className="w-full bg-[#161a22] border border-[#232938] focus:border-[#ff5500] rounded-lg px-3 py-2.5 text-xs text-white font-mono-code focus:outline-none min-h-[44px]"
                   />
                   <div className="flex items-center justify-between text-[11px] text-[#6b7280] mt-1">
-                    <span>Fixed token edition count enforced by Solana Candy Machine.</span>
+                    <span>Fixed token edition count enforced on Algorand ASA.</span>
                     {!isSupplyValid && totalSupply !== '' && (
                       <span className="text-red-400 font-semibold">
                         Must be a whole number between {launchCfg.minSupply} and {launchCfg.maxSupply.toLocaleString()}
@@ -747,8 +747,8 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
                       onChange={(e) => setCurrency(e.target.value as any)}
                       className="w-full bg-[#161a22] border border-[#232938] focus:border-[#ff5500] rounded-lg px-3 py-2.5 text-xs text-white font-mono-code focus:outline-none min-h-[44px]"
                     >
-                      <option value="SOL">SOL (Native)</option>
-                      <option value="USDC">USDC (Devnet)</option>
+                      <option value="ALGO">ALGO (Native)</option>
+                      <option value="USDC">USDC (Testnet)</option>
                     </select>
                   </div>
                 </div>
@@ -917,7 +917,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
                 platformFeePercent={platformFeePct}
                 estimatedNetworkFeeSol={estimatedNetworkFee}
                 walletBalanceSol={connected ? balance : null}
-                currency="SOL"
+                currency="ALGO"
                 connectedWalletAddress={publicKey}
                 onRequestAirdrop={handleAirdrop}
                 isAirdropping={isAirdropping}
@@ -956,11 +956,11 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
                 <div className="p-5 rounded-xl bg-[#0e1612] border border-emerald-500/50 space-y-4">
                   <div className="flex items-center gap-2.5 text-emerald-400 font-bold text-sm">
                     <CheckCircle2 size={18} />
-                    <span>Collection Successfully Deployed on Solana Devnet!</span>
+                    <span>Collection Successfully Deployed on Algorand Testnet!</span>
                   </div>
 
                   <p className="text-xs text-[#a7f3d0] leading-relaxed">
-                    Your collection <strong>{confirmedCollection.name}</strong> ({confirmedCollection.symbol}) is live on-chain. Candy Machine accounts are initialized and ready for minting.
+                    Your collection <strong>{confirmedCollection.name}</strong> ({confirmedCollection.symbol}) is live on-chain. Algorand ASA parameters are initialized and ready for minting.
                   </p>
 
                   <div className="p-3 rounded-lg bg-[#070b09] border border-emerald-950 text-xs font-mono-code space-y-1.5 text-[#8e97a8]">
@@ -972,9 +972,9 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
                     </div>
                     {confirmedTxSignature && (
                       <div className="flex justify-between items-center">
-                        <span>Solana Signature:</span>
+                        <span>Algorand Tx ID:</span>
                         <a
-                          href={`https://explorer.solana.com/tx/${confirmedTxSignature}?cluster=devnet`}
+                          href={`https://testnet.explorer.perawallet.app/tx/${confirmedTxSignature}`}
                           target="_blank"
                           rel="noreferrer"
                           className="text-[#ff8c4d] hover:underline flex items-center gap-1"
@@ -1118,19 +1118,19 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
                     <div className="p-3 rounded-lg bg-[#0d1016] border border-[#1b212d] space-y-1.5 text-xs font-mono-code">
                       <div className="flex justify-between text-[#8e97a8]">
                         <span>Collection creation:</span>
-                        <span className="text-white">{creationFee.toFixed(2)} SOL</span>
+                        <span className="text-white">{creationFee.toFixed(2)} ALGO</span>
                       </div>
                       <div className="flex justify-between text-[#8e97a8]">
                         <span>Platform fee:</span>
-                        <span className="text-white">0.00 SOL ({platformFeePct}% at mint)</span>
+                        <span className="text-white">0.00 ALGO ({platformFeePct}% at mint)</span>
                       </div>
                       <div className="flex justify-between text-[#8e97a8]">
                         <span>Estimated network fee:</span>
-                        <span className="text-white">~{estimatedNetworkFee.toFixed(3)} SOL</span>
+                        <span className="text-white">~{estimatedNetworkFee.toFixed(3)} ALGO</span>
                       </div>
                       <div className="border-t border-dashed border-[#232938] pt-1.5 flex justify-between text-sm font-bold">
                         <span className="text-white">Estimated total:</span>
-                        <span className="text-[#ff5500]">~{estimatedTotalCost.toFixed(3)} SOL</span>
+                        <span className="text-[#ff5500]">~{estimatedTotalCost.toFixed(3)} ALGO</span>
                       </div>
                     </div>
                   </div>
@@ -1155,7 +1155,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
                     </div>
                     {connected && (
                       <span className="font-mono-code text-emerald-400 font-semibold">
-                        Balance: {balance.toFixed(4)} SOL
+                        Balance: {balance.toFixed(4)} ALGO
                       </span>
                     )}
                   </div>
@@ -1206,7 +1206,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
                         {isStep1Valid && isStep2Valid && launchButtonState === 'ready' && (
                           <>
                             <Sparkles size={16} />
-                            <span>Launch Collection ({creationFee} SOL)</span>
+                            <span>Launch Collection ({creationFee} ALGO)</span>
                           </>
                         )}
 
@@ -1222,7 +1222,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
                         {launchButtonState === 'awaiting_wallet' && (
                           <>
                             <Wallet size={15} className="animate-pulse" />
-                            <span>Awaiting Wallet Approval in Phantom/Solflare...</span>
+                            <span>Awaiting Wallet Approval in Pera/Defly...</span>
                           </>
                         )}
 
@@ -1230,7 +1230,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
                         {launchButtonState === 'processing' && (
                           <>
                             <RefreshCw size={15} className="animate-spin" />
-                            <span>Processing Solana Devnet Confirmation...</span>
+                            <span>Processing Algorand Testnet Confirmation...</span>
                           </>
                         )}
 
@@ -1246,7 +1246,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
 
                     {/* Explanatory note under button */}
                     <p className="text-[11px] text-[#6b7280] text-center">
-                      Deployment triggers an on-chain transaction to register candy machine parameters on Solana Devnet.
+                      Deployment triggers an on-chain transaction to register ASA smart contract parameters on Algorand Testnet.
                     </p>
                   </div>
                 </div>
@@ -1280,7 +1280,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
             <ul className="space-y-1.5 text-[11px] leading-relaxed">
               <li className="flex items-start gap-1.5">
                 <CheckCircle2 size={12} className="text-emerald-400 shrink-0 mt-0.5" />
-                <span>Zero upfront platform charge — only 0.05 SOL deploy and ~0.012 SOL network rent.</span>
+                <span>Zero upfront platform charge — only 0.05 ALGO deploy and ~0.012 ALGO network fees.</span>
               </li>
               <li className="flex items-start gap-1.5">
                 <CheckCircle2 size={12} className="text-emerald-400 shrink-0 mt-0.5" />

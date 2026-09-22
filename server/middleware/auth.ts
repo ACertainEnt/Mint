@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { db } from '../db';
 import { User } from '../../src/types';
+import { isPrivilegedAccount, isPlatformOwner } from '../utils/privileges';
 
 export interface AuthenticatedRequest extends Request {
   user?: User;
@@ -20,7 +21,7 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
   // Token is formatted as usr_<id>:<timestamp> or session signature
   const userId = token.split(':')[0];
   const database = db.get();
-  const user = database.users.find(u => u.id === userId);
+  const user = database.users.find(u => u.id === userId || (u.firebaseUid && u.firebaseUid === userId));
 
   if (user) {
     req.user = user;
@@ -37,8 +38,15 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
 }
 
 export function requireAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'owner')) {
+  if (!req.user || (!isPrivilegedAccount(req.user) && req.user.role !== 'admin')) {
     return res.status(403).json({ error: 'Administrative privileges required' });
+  }
+  next();
+}
+
+export function requireOwner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  if (!req.user || !isPlatformOwner(req.user)) {
+    return res.status(403).json({ error: 'Platform owner privileges required' });
   }
   next();
 }

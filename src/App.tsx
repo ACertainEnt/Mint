@@ -30,7 +30,7 @@ import { api } from './lib/api';
 
 const AppContent: React.FC = () => {
   const { user, showAuthModal, setShowAuthModal, needsOnboarding } = useAuth();
-  const { connected, balance, sendSolTransaction, txState, dismissTxModal, retryTx } = useWallet();
+  const { connected, balance, sendTransaction, txState, dismissTxModal, retryTx } = useWallet();
 
   // Navigation State
   // Format: 'home' | 'explore' | 'launch' | 'auctions' | 'bounties' | 'portfolio' | 'admin' | 'nft/:id' | 'collection/:id' | 'user/:username' | 'auctions/:id'
@@ -157,8 +157,8 @@ const AppContent: React.FC = () => {
     }
 
     try {
-      // 1. Prompt Solana wallet transaction to seller
-      const txResult = await sendSolTransaction(
+      // 1. Prompt Algorand wallet transaction to seller
+      const txResult = await sendTransaction(
         nft.ownerAddress,
         nft.price || 0.5,
         `Purchase NFT: ${nft.name}`
@@ -348,7 +348,7 @@ const AppContent: React.FC = () => {
         onNavigate={handleNavigate}
       />
 
-      {/* 6-State Solana Blockchain Transaction Lifecycle Modal */}
+      {/* Algorand Blockchain Transaction Lifecycle Modal */}
       <TransactionModal
         state={txState}
         onDismiss={dismissTxModal}

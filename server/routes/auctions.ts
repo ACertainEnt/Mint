@@ -197,7 +197,7 @@ auctionsRouter.post('/:id/bid', requireAuth, (req: AuthenticatedRequest, res) =>
     id: `bid_${Date.now()}`,
     bidderId: bidder.id,
     bidderUsername: bidder.username,
-    bidderAddress: bidder.walletAddress || 'Solana_Devnet_Bidder',
+    bidderAddress: bidder.walletAddress || 'Algorand_Testnet_Bidder',
     bidderAvatar: bidder.avatar,
     amount: numAmount,
     timestamp: new Date().toISOString(),
@@ -224,7 +224,7 @@ auctionsRouter.post('/:id/bid', requireAuth, (req: AuthenticatedRequest, res) =>
     const nft = database.nfts.find(n => n.id === auction.nftId);
     if (nft) {
       nft.ownerId = bidder.id;
-      nft.ownerAddress = bidder.walletAddress || 'Solana_Devnet_Winner';
+      nft.ownerAddress = bidder.walletAddress || 'Algorand_Testnet_Winner';
       nft.ownerUsername = bidder.username;
       nft.isInAuction = false;
       nft.auctionId = undefined;
@@ -316,7 +316,7 @@ auctionsRouter.post('/:id/settle', requireAuth, (req: AuthenticatedRequest, res)
   const nft = database.nfts.find(n => n.id === auction.nftId);
   if (nft) {
     nft.ownerId = auction.currentBidderId;
-    nft.ownerAddress = auction.currentBidderAddress || 'Solana_Devnet_Winner';
+    nft.ownerAddress = auction.currentBidderAddress || 'Algorand_Testnet_Winner';
     nft.ownerUsername = auction.currentBidderUsername;
     nft.isInAuction = false;
     nft.auctionId = undefined;

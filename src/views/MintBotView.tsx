@@ -54,7 +54,7 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
   const [usage, setUsage] = useState<MintBotUsage | null>(null);
   const [statusInfo, setStatusInfo] = useState<{
     database: { status: string; provider: string };
-    solanaRpc: { status: string; network: string; endpoint: string; slot?: number };
+    algorandRpc?: { status: string; network: string; endpoint: string; round?: number };
     indexingProvider: { isConfigured: boolean; provider: string; message: string };
     aiEngine: { status: string; provider: string; note: string };
   } | null>(null);
@@ -144,7 +144,7 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-[#8e97a8]">
-                  Grounded NFT analytics, verified order books, and real-time Solana Devnet RPC state
+                  Grounded NFT analytics, verified order books, and real-time Algorand Testnet node state
                 </p>
               </div>
             </div>
@@ -152,10 +152,10 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
 
           {/* Connected Data Sources & Usage Quota */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            {/* Solana Devnet RPC badge */}
+            {/* Algorand Testnet RPC badge */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#141822] border border-[#212634] text-[#8e97a8] font-mono-code text-[11px]">
-              <span className={`w-2 h-2 rounded-full ${statusInfo?.solanaRpc.status === 'online' ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
-              <span>Solana RPC: {statusInfo?.solanaRpc.network || 'Devnet'}</span>
+              <span className={`w-2 h-2 rounded-full ${statusInfo?.algorandRpc?.status === 'online' ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
+              <span>Algorand Node: {statusInfo?.algorandRpc?.network || 'Testnet'}</span>
             </div>
 
             {/* MINT Database badge */}
@@ -231,7 +231,7 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
             { id: 'all', label: 'All Research' },
             { id: 'collections', label: 'Collections & Floors' },
             { id: 'nfts', label: 'NFT Specs' },
-            { id: 'wallets', label: 'Solana Wallets' },
+            { id: 'wallets', label: 'Algorand Wallets' },
             { id: 'auctions', label: 'Auctions' },
             { id: 'fees', label: 'Platform Fees' }
           ].map(cat => (
@@ -239,9 +239,9 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
               key={cat.id}
               onClick={() => {
                 setActiveCategory(cat.id);
-                if (cat.id === 'collections') setQuery('Analyze Ents of Solana collection floor and stats');
+                if (cat.id === 'collections') setQuery('Analyze Ents of Algorand collection floor and stats');
                 if (cat.id === 'nfts') setQuery('Look up Elder Ent #001 metadata and traits');
-                if (cat.id === 'wallets') setQuery('Check balance for ACEp1aTfX7h8Kq3w9uV4y2z5L1m6NoP8qRsTuVwXyZ');
+                if (cat.id === 'wallets') setQuery('Check balance for ACEALGORANDTESTNETVALIDATORCREATOR7XQP9KLM1VOS3W2YRT7UABCD');
                 if (cat.id === 'auctions') setQuery('Find active auctions on MINT');
                 if (cat.id === 'fees') setQuery('What are the protocol fees and creator royalties?');
               }}
@@ -354,13 +354,13 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
                 <div className="p-3 rounded-xl bg-[#080a0f] border border-[#1a1f2c]">
                   <span className="text-[#8e97a8]">Floor Price</span>
                   <p className="text-base font-bold font-mono-code text-[#ff5500] mt-0.5">
-                    {currentResult.structuredData.collectionStats.floorPrice} SOL
+                    {currentResult.structuredData.collectionStats.floorPrice} ALGO
                   </p>
                 </div>
                 <div className="p-3 rounded-xl bg-[#080a0f] border border-[#1a1f2c]">
                   <span className="text-[#8e97a8]">Total Volume</span>
                   <p className="text-base font-bold font-mono-code text-white mt-0.5">
-                    {currentResult.structuredData.collectionStats.totalVolume} SOL
+                    {currentResult.structuredData.collectionStats.totalVolume} ALGO
                   </p>
                 </div>
                 <div className="p-3 rounded-xl bg-[#080a0f] border border-[#1a1f2c]">
@@ -386,7 +386,7 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
                 <div className="flex items-center gap-2">
                   <Wallet size={16} className="text-[#ff5500]" />
                   <span className="text-xs font-bold text-white uppercase tracking-wider">
-                    Solana On-Chain Wallet Analysis
+                    Algorand On-Chain Account Analysis
                   </span>
                 </div>
                 <span className="text-[11px] font-mono-code text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
@@ -397,7 +397,7 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl bg-[#080a0f] border border-[#1a1f2c] space-y-2 text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-[#8e97a8]">Public Key:</span>
+                    <span className="text-[#8e97a8]">Algorand Address:</span>
                     <div className="flex items-center gap-1.5">
                       <span className="font-mono-code text-white">
                         {currentResult.structuredData.wallet.address.slice(0, 8)}...{currentResult.structuredData.wallet.address.slice(-8)}
@@ -409,7 +409,7 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
                         {copiedAddr === currentResult.structuredData.wallet.address ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
                       </button>
                       <a
-                        href={`https://explorer.solana.com/address/${currentResult.structuredData.wallet.address}?cluster=devnet`}
+                        href={`https://testnet.explorer.perawallet.app/address/${currentResult.structuredData.wallet.address}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[#ff5500] hover:underline"
@@ -420,16 +420,16 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-[#8e97a8]">Solana Balance:</span>
+                    <span className="text-[#8e97a8]">ALGO Balance:</span>
                     <span className="font-mono-code font-bold text-base text-[#ff5500]">
-                      {currentResult.structuredData.wallet.solBalance} SOL
+                      {currentResult.structuredData.wallet.balance ?? (currentResult.structuredData.wallet as any).solBalance ?? 0} ALGO
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <span className="text-[#8e97a8]">Mint User Handle:</span>
                     <span className="font-mono-code text-white">
-                      {currentResult.structuredData.wallet.username ? `@${currentResult.structuredData.wallet.username}` : 'Unregistered keypair'}
+                      {currentResult.structuredData.wallet.username ? `@${currentResult.structuredData.wallet.username}` : 'Unregistered address'}
                     </span>
                   </div>
 
@@ -444,7 +444,7 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
                 {/* Recent Transaction Signatures directly from RPC */}
                 <div className="p-4 rounded-xl bg-[#080a0f] border border-[#1a1f2c] space-y-2 text-xs">
                   <span className="text-[#8e97a8] font-medium block">
-                    Recent Solana Devnet Transactions ({currentResult.structuredData.wallet.recentSignatures.length}):
+                    Recent Algorand Testnet Transactions ({currentResult.structuredData.wallet.recentSignatures.length}):
                   </span>
                   {currentResult.structuredData.wallet.recentSignatures.length > 0 ? (
                     <div className="space-y-1.5">
@@ -452,7 +452,7 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
                         <div key={idx} className="flex items-center justify-between font-mono-code text-[11px] bg-[#10131c] p-1.5 rounded border border-[#1a202c]">
                           <span className="text-[#8e97a8]">{sig.slice(0, 10)}...{sig.slice(-10)}</span>
                           <a
-                            href={`https://explorer.solana.com/tx/${sig}?cluster=devnet`}
+                            href={`https://testnet.explorer.perawallet.app/tx/${sig}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-[#ff5500] hover:underline flex items-center gap-1"
@@ -501,7 +501,7 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
                       </h5>
                       <div className="flex items-center justify-between text-xs font-mono-code">
                         <span className="text-[#8e97a8]">
-                          {nft.isListed ? `${nft.price} SOL` : nft.isInAuction ? 'In Auction' : 'Vault'}
+                          {nft.isListed ? `${nft.price} ALGO` : nft.isInAuction ? 'In Auction' : 'Vault'}
                         </span>
                         <span className="text-[10px] text-[#6b7280]">
                           #{nft.id.length > 4 ? nft.id.slice(-4) : nft.id}
@@ -543,7 +543,7 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
                         {auction.nft.name}
                       </h5>
                       <div className="flex items-center justify-between text-xs font-mono-code pt-1">
-                        <span className="text-[#8e97a8]">High Bid: <b className="text-white">{auction.currentBid} SOL</b></span>
+                        <span className="text-[#8e97a8]">High Bid: <b className="text-white">{auction.currentBid} ALGO</b></span>
                         <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
                           {auction.bidsCount} bids
                         </span>

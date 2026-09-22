@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "waitlist_entry": {
+      "title": "WaitlistEntry",
+      "description": "A waitlist submission for early access to the MINT protocol.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "normalizedEmail": { "type": "string" },
+        "walletAddress": { "type": "string" },
+        "roleInterest": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "hasRedeemedBeta": { "type": "boolean" }
+      },
+      "required": ["email", "normalizedEmail", "createdAt"]
+    },
+    "beta_code": {
+      "title": "BetaCode",
+      "description": "Cryptographically generated single-use beta code for accessing MINT.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "status": { "type": "string", "enum": ["unused", "redeemed", "revoked"] },
+        "assignedEmail": { "type": "string" },
+        "redeemedByUid": { "type": "string" },
+        "redeemedByUserId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "redeemedAt": { "type": "string" },
+        "expiresAt": { "type": "string" }
+      },
+      "required": ["code", "status", "createdAt"]
+    },
+    "user_profile": {
+      "title": "UserProfile",
+      "description": "Persistent user profile keyed by stable Firebase UID or MINT ID.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "firebaseUid": { "type": "string" },
+        "email": { "type": "string" },
+        "username": { "type": "string" },
+        "displayName": { "type": "string" },
+        "avatar": { "type": "string" },
+        "role": { "type": "string" },
+        "isPrivileged": { "type": "boolean" },
+        "isVerified": { "type": "boolean" },
+        "beta_access": { "type": "boolean" },
+        "usernameColor": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "username", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/waitlist/{waitlistId}": {
+      "schema": { "$ref": "#/entities/waitlist_entry" },
+      "description": "Prospective member waitlist submissions. Writeable by public; readable only by platform admins."
+    },
+    "/beta_codes/{codeId}": {
+      "schema": { "$ref": "#/entities/beta_code" },
+      "description": "Single-use invitation beta codes. Managed exclusively by platform admins."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/user_profile" },
+      "description": "Persistent public user identity and security entitlements."
+    }
+  }
+}

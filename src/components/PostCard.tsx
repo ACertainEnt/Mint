@@ -977,7 +977,7 @@ export const PostCard: React.FC<PostCardProps> = ({
           <div className="flex-1 min-w-0">
             <h4 className="text-xs font-bold text-white truncate">{post.nft.name}</h4>
             <p className="text-[11px] text-[#ff5500] font-mono-code font-bold">
-              {post.nft.price ? `${post.nft.price} SOL` : 'Unlisted'}
+              {post.nft.price ? `${post.nft.price} ALGO` : 'Unlisted'}
             </p>
           </div>
         </div>
@@ -1155,7 +1155,7 @@ export const PostCard: React.FC<PostCardProps> = ({
               <div className="p-3 rounded-xl bg-[#181d29] border border-[#222838] flex items-center justify-between">
                 <div>
                   <div className="text-xs font-bold text-white">Original Web3 Creator Content</div>
-                  <div className="text-[10px] text-[#8e97a8]">Authored by verified Solana account</div>
+                  <div className="text-[10px] text-[#8e97a8]">Authored by verified Algorand account</div>
                 </div>
                 <Check size={16} className="text-emerald-400 shrink-0" />
               </div>

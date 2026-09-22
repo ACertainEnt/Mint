@@ -2,14 +2,12 @@ import { Router } from 'express';
 import { db } from '../db';
 import { AuthenticatedRequest, requireAuth } from '../middleware/auth';
 import { CommunityPost, PostComment, Notification } from '../../src/types';
+import { isPrivilegedAccount } from '../utils/privileges';
 
 export const postsRouter = Router();
 
 function isPlatformOwnerOrAdmin(user?: any): boolean {
-  if (!user) return false;
-  const isOwnerEmail = user.email?.toLowerCase() === 'pervercy23@gmail.com';
-  const hasOwnerRole = user.role === 'owner' || user.role === 'admin';
-  return isOwnerEmail || hasOwnerRole;
+  return isPrivilegedAccount(user);
 }
 
 // GET /feed/posts or /posts - Get community or general feed posts

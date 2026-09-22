@@ -3,6 +3,7 @@ import { Search, Bell, Wallet, User as UserIcon, LogOut, Shield, ChevronDown, Ch
 import { BrandLogo } from './BrandLogo';
 import { VerifiedBadge } from './VerifiedBadge';
 import { ProviderBadge } from './ProviderBadge';
+import { UsernameDisplay } from './UsernameDisplay';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
 
@@ -49,7 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full bg-[#0a0c10]/90 backdrop-blur-md border-b border-[#1b202c]">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
-        {/* Left: Brand Logo & Solana Devnet Indicator */}
+        {/* Left: Brand Logo & Algorand Testnet Indicator */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => onNavigate('home')}
@@ -61,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Network indicator */}
           <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono-code font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>SOLANA DEVNET</span>
+            <span>ALGORAND TESTNET</span>
           </div>
         </div>
 
@@ -136,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <div className="w-2 h-2 rounded-full bg-emerald-400" />
                 <span className="font-mono-code font-bold text-[#ff5500]">
-                  {balance.toFixed(2)} SOL
+                  {balance.toFixed(2)} ALGO
                 </span>
                 {publicKey && publicKey.length >= 8 && (
                   <span className="hidden sm:inline font-mono-code text-[11px] text-[#8e97a8]">
@@ -159,12 +160,12 @@ export const Header: React.FC<HeaderProps> = ({
             {walletDropdown && connected && publicKey && (
               <div className="absolute right-0 mt-2 w-64 bg-[#11141a] border border-[#232938] rounded-xl p-3 shadow-2xl z-50 text-left animate-fade-in">
                 <div className="text-[10px] font-mono-code text-[#6b7280] uppercase">
-                  Connected via {walletName || 'Solana'}
+                  Connected via {walletName || 'Algorand'}
                 </div>
                 <div className="font-mono-code text-xs text-white break-all bg-[#0a0c10] p-2 rounded border border-[#1b202c] my-1.5 flex items-center justify-between">
                   <span>{publicKey.length >= 16 ? `${publicKey.slice(0, 10)}...${publicKey.slice(-6)}` : publicKey}</span>
                   <a
-                    href={`https://explorer.solana.com/address/${publicKey}?cluster=devnet`}
+                    href={`https://testnet.explorer.perawallet.app/address/${publicKey}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#ff5500] hover:underline"
@@ -174,9 +175,9 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
 
                 <div className="p-2 rounded bg-[#161a22] border border-[#212634] my-2">
-                  <div className="text-[10px] font-mono-code text-[#8e97a8]">DEVNET BALANCE</div>
+                  <div className="text-[10px] font-mono-code text-[#8e97a8]">TESTNET BALANCE</div>
                   <div className="text-base font-mono-code font-extrabold text-[#ff5500]">
-                    {balance.toFixed(4)} SOL
+                    {balance.toFixed(4)} ALGO
                   </div>
                 </div>
 
@@ -187,7 +188,7 @@ export const Header: React.FC<HeaderProps> = ({
                   className="w-full mb-2 py-1.5 px-2 rounded-lg bg-[#ff5500]/15 hover:bg-[#ff5500]/25 border border-[#ff5500]/30 text-[#ff8c4d] text-xs font-mono-code font-bold flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <Coins size={13} />
-                  <span>{airdropping ? 'Requesting...' : '+1.0 Free Devnet SOL'}</span>
+                  <span>{airdropping ? 'Requesting...' : '+10.0 Free Testnet ALGO'}</span>
                 </button>
 
                 <button
@@ -239,8 +240,8 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="text-xs font-bold text-white truncate block">
                     {user.displayName}
                   </span>
-                  <div className="flex items-center gap-1.5 text-[11px] font-mono-code text-[#ff5500]">
-                    <span>@{user.username}</span>
+                  <div className="flex items-center gap-1.5 text-[11px] font-mono-code">
+                    <UsernameDisplay user={user} className="text-[11px]" />
                     {user.isVerified && <VerifiedBadge size="sm" />}
                   </div>
                 </div>

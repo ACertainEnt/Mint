@@ -83,19 +83,19 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ status, onCl
           </div>
         </div>
 
-        {/* Solana On-chain Signature Link */}
+        {/* Algorand On-chain Signature Link */}
         {status.txSignature && (
           <div className="mt-4 pt-3 border-t border-[#1c212d] flex items-center justify-between text-xs">
             <span className="text-[#6b7280] font-mono-code">
               Tx: {status.txSignature.length >= 16 ? `${status.txSignature.slice(0, 8)}...${status.txSignature.slice(-8)}` : status.txSignature}
             </span>
             <a
-              href={`https://explorer.solana.com/tx/${status.txSignature}?cluster=devnet`}
+              href={`https://testnet.explorer.perawallet.app/tx/${status.txSignature}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-[#ff5500] hover:underline font-mono-code font-medium"
             >
-              Solana Explorer <ExternalLink size={12} />
+              Algorand Explorer <ExternalLink size={12} />
             </a>
           </div>
         )}

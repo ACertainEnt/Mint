@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { AuthenticatedRequest, requireAdmin } from '../middleware/auth';
+import { isPlatformOwner } from '../utils/privileges';
 
 export const adminRouter = Router();
 
@@ -18,12 +19,41 @@ adminRouter.get('/users', (req: AuthenticatedRequest, res) => {
     avatar: u.avatar,
     walletAddress: u.walletAddress,
     role: u.role,
+    privilegedType: u.privilegedType,
+    isPrivileged: u.isPrivileged,
+    usernameColor: u.usernameColor,
     isVerified: u.isVerified,
+    isFoundingMember: u.isFoundingMember,
     createdAt: u.createdAt,
     profileCompleted: u.profileCompleted
   }));
 
   res.json({ users });
+});
+
+// Update user privileged status or role (owner-only)
+adminRouter.post('/update-user-privilege', (req: AuthenticatedRequest, res) => {
+  if (!isPlatformOwner(req.user)) {
+    return res.status(403).json({ error: 'Only the platform owner can grant or revoke privileged account status.' });
+  }
+
+  const { userId, role, privilegedType, isPrivileged } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' });
+  }
+
+  const database = db.get();
+  const targetUser = database.users.find(u => u.id === userId);
+  if (!targetUser) {
+    return res.status(404).json({ error: 'Target user not found' });
+  }
+
+  if (role !== undefined) targetUser.role = role;
+  if (privilegedType !== undefined) targetUser.privilegedType = privilegedType;
+  if (isPrivileged !== undefined) targetUser.isPrivileged = isPrivileged;
+
+  db.save(database);
+  res.json({ success: true, user: targetUser });
 });
 
 // Toggle user verification status

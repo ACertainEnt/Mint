@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { MintBotOrchestrator } from './orchestrator';
 import { MintBotEntitlements } from './entitlements';
-import { SolanaOnChainData } from './onChainData';
-import { SolanaNftIndexingLayer } from './indexingLayer';
+import { AlgorandOnChainData } from './onChainData';
+import { AlgorandNftIndexingLayer } from './indexingLayer';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { MintBotSuggestionGroup } from '../../src/types';
 
@@ -45,8 +45,8 @@ mintBotRouter.get('/usage', (req: AuthenticatedRequest, res) => {
 // Data providers and connection status
 mintBotRouter.get('/status', async (req, res) => {
   const [rpcHealth, indexerStatus] = await Promise.all([
-    SolanaOnChainData.checkRpcHealth(),
-    SolanaNftIndexingLayer.getStatus()
+    AlgorandOnChainData.checkRpcHealth(),
+    AlgorandNftIndexingLayer.getStatus()
   ]);
 
   const geminiAvailable = Boolean(process.env.GEMINI_API_KEY);
@@ -57,12 +57,12 @@ mintBotRouter.get('/status', async (req, res) => {
       status: 'online',
       latency: '< 1ms'
     },
-    solanaRpc: {
-      endpoint: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-      network: 'Solana Devnet',
+    algorandRpc: {
+      endpoint: process.env.ALGORAND_ALGOD_SERVER || 'https://testnet-api.algonode.cloud',
+      network: 'Algorand Testnet',
       status: rpcHealth.status,
       latencyMs: rpcHealth.latencyMs,
-      slot: rpcHealth.slot
+      round: rpcHealth.round
     },
     indexingProvider: {
       ...indexerStatus
@@ -89,23 +89,23 @@ mintBotRouter.get('/suggestions', (req, res) => {
     {
       category: 'Collection Analytics',
       queries: [
-        'Analyze Ents of Solana floor price and volume',
+        'Analyze Ents of Algorand floor price and volume',
         'Show Chrono Glyphs supply and mint progress',
         'Compare Hyper Cubes and Ents royalty fees'
       ]
     },
     {
-      category: 'Solana Wallets & Holdings',
+      category: 'Algorand Wallets & Holdings',
       queries: [
-        'Check balance for ACEp1aTfX7h8Kq3w9uV4y2z5L1m6NoP8qRsTuVwXyZ',
-        'Lookup Krom9x87Hq6tLm2P4vSw5rYz8bAcD1eFgHiJkLmNoP portfolio',
-        'Analyze my current wallet balance on Solana Devnet'
+        'Check balance for ALGORAND testnet wallet',
+        'Lookup creator Krom portfolio',
+        'Analyze my current wallet balance on Algorand'
       ]
     },
     {
       category: 'Marketplace & Listings',
       queries: [
-        'Find cheapest NFTs listed under 2 SOL',
+        'Find cheapest NFTs listed under 50 ALGO',
         'Search all active marketplace listings',
         'Show newly minted items available for purchase'
       ]

@@ -1,4 +1,6 @@
-export type UserRole = 'owner' | 'admin' | 'creator' | 'collector';
+export type UserRole = 'owner' | 'platform_owner' | 'admin' | 'trusted_mint_account' | 'privileged_account' | 'creator' | 'collector';
+
+export type PrivilegedAccountType = 'platform_owner' | 'trusted_mint_account' | 'privileged_account' | null;
 
 export interface UserEntitlement {
   tier: 'free' | 'pro' | 'unlimited';
@@ -16,6 +18,9 @@ export interface User {
   bio?: string;
   walletAddress?: string;
   role: UserRole;
+  privilegedType?: PrivilegedAccountType;
+  isPrivileged?: boolean;
+  usernameColor?: string;
   isVerified: boolean;
   isFoundingMember?: boolean;
   foundingMemberGrantedAt?: string;
@@ -24,6 +29,8 @@ export interface User {
   bot_unlimited?: boolean;
   bot_usage_limit?: number;
   entitlement?: UserEntitlement;
+  beta_access?: boolean;
+  firebaseUid?: string;
   socialLinks?: {
     website?: string;
     twitter?: string;
@@ -32,7 +39,8 @@ export interface User {
   };
   createdAt: string;
   profileCompleted: boolean;
-  authProvider?: 'google' | 'apple' | 'github' | 'x' | 'twitter' | 'wallet' | 'email' | string;
+  emailVerified?: boolean;
+  authProvider?: 'google' | 'github' | 'x' | 'twitter' | 'wallet' | 'email' | string;
   lastUsernameChangedAt?: string;
 }
 
@@ -105,7 +113,7 @@ export interface NFT {
   lastSalePrice?: number;
   views: number;
   likes: number;
-  blockchain: 'Solana';
+  blockchain: 'Algorand';
 }
 
 export interface AuctionBid {
@@ -129,13 +137,13 @@ export interface Auction {
   creatorUsername: string;
   creatorAvatar: string;
   creatorVerified: boolean;
-  startingPrice: number; // SOL
+  startingPrice: number; // ALGO
   reservePrice?: number;
   buyNowPrice?: number;
-  currency: 'SOL';
+  currency: 'ALGO' | 'SOL';
   startTime: string;
   endTime: string;
-  minBidIncrement: number; // e.g. 0.05 SOL
+  minBidIncrement: number; // e.g. 0.05 ALGO
   currentBid: number;
   currentBidderId?: string;
   currentBidderUsername?: string;
@@ -188,8 +196,8 @@ export interface Bounty {
   creatorUsername: string;
   creatorAvatar: string;
   creatorVerified: boolean;
-  reward: number; // SOL
-  currency: 'SOL';
+  reward: number; // ALGO
+  currency: 'ALGO' | 'SOL';
   deadline: string;
   category: BountyCategory;
   requirements: string[];
@@ -243,6 +251,14 @@ export interface FollowRecord {
   followingId: string;
   createdAt: string;
 }
+
+// Aliases for Social modules & database layers
+export type SocialLike = LikeRecord;
+export type SocialPost = CommunityPost;
+export type SocialComment = PostComment;
+export type SocialCommunity = Community;
+export type SocialCommunityMember = CommunityMember;
+export type SocialFollow = FollowRecord;
 
 export type RoleFontStyle = 
   | 'default' // Clean Sans
@@ -592,7 +608,7 @@ export interface PlatformConfig {
   auctionFeePercent: number;     // 2.0%
   mintFeePercent: number;        // 1.0%
   treasuryAddress: string;
-  network: 'devnet' | 'mainnet-beta';
+  network: 'testnet' | 'mainnet' | 'devnet' | 'mainnet-beta';
   rpcEndpoint: string;
   communityCreationCooldownHours?: number; // default 10 hours for normal users
   mintBotConfig?: MintBotConfig;
@@ -606,14 +622,14 @@ export type PlatformSettings = PlatformConfig;
 
 export interface MintBotDataSource {
   name: string;
-  type: 'mint_db' | 'solana_rpc' | 'indexing_provider' | 'grounded_rules';
+  type: 'mint_db' | 'chain_rpc' | 'indexing_provider' | 'grounded_rules';
   status: 'verified' | 'unavailable' | 'rpc_live';
   details?: string;
 }
 
 export interface MintBotWalletData {
   address: string;
-  solBalance: number;
+  balance: number;
   isRegisteredUser: boolean;
   username?: string;
   rpcNetwork: string;
@@ -686,4 +702,29 @@ export interface TxStatus {
   message?: string;
   txSignature?: string;
   error?: string;
+}
+
+export interface WaitlistEntry {
+  id: string;
+  email: string;
+  normalizedEmail: string;
+  walletAddress?: string;
+  roleInterest?: 'creator' | 'collector' | 'developer' | 'community';
+  notes?: string;
+  createdAt: string;
+  hasRedeemedBeta?: boolean;
+}
+
+export interface BetaCodeRecord {
+  id: string;
+  code: string;
+  status: 'unused' | 'redeemed' | 'revoked';
+  assignedEmail?: string;
+  redeemedByUid?: string;
+  redeemedByUserId?: string;
+  createdAt: string;
+  redeemedAt?: string;
+  expiresAt?: string;
+  createdById?: string;
+  notes?: string;
 }

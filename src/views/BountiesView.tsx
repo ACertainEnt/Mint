@@ -146,7 +146,7 @@ export const BountiesView: React.FC<BountiesViewProps> = ({ onNavigate }) => {
             Ecosystem Tasks & Commissions
           </h1>
           <p className="text-xs sm:text-sm text-[#9ca3af] mt-1">
-            Commission artwork, generative trait design, and creative tasks with escrow-style SOL payouts.
+            Commission artwork, generative trait design, and creative tasks with escrow-style ALGO payouts.
           </p>
         </div>
 
@@ -195,7 +195,7 @@ export const BountiesView: React.FC<BountiesViewProps> = ({ onNavigate }) => {
         <div className="py-20 text-center rounded-2xl bg-[#11141b] border border-[#212634] p-8">
           <Target size={36} className="mx-auto mb-3 text-[#6b7280]" />
           <h3 className="text-base font-bold text-white">No active bounties in this category</h3>
-          <p className="text-xs text-[#8e97a8] mt-1">Post a creative commission for the Solana community.</p>
+          <p className="text-xs text-[#8e97a8] mt-1">Post a creative commission for the Algorand community.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -215,7 +215,7 @@ export const BountiesView: React.FC<BountiesViewProps> = ({ onNavigate }) => {
                     </span>
                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono-code font-extrabold text-sm">
                       <DollarSign size={14} />
-                      <span>{bty.reward} SOL</span>
+                      <span>{bty.reward} ALGO</span>
                     </div>
                   </div>
 
@@ -312,7 +312,7 @@ export const BountiesView: React.FC<BountiesViewProps> = ({ onNavigate }) => {
               Create Ecosystem Bounty
             </h2>
             <p className="text-xs text-[#9ca3af] mb-4">
-              Reward contributors in SOL for artwork, code, or collection assets.
+              Reward contributors in ALGO for artwork, code, or collection assets.
             </p>
 
             {createError && (
@@ -353,7 +353,7 @@ export const BountiesView: React.FC<BountiesViewProps> = ({ onNavigate }) => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[#8e97a8] mb-1">
-                    Reward (SOL) *
+                    Reward (ALGO) *
                   </label>
                   <input
                     type="number"

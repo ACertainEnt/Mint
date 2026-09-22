@@ -7,7 +7,6 @@ import { nftsRouter } from './server/routes/nfts';
 import { auctionsRouter } from './server/routes/auctions';
 import { bountiesRouter } from './server/routes/bounties';
 import { usersRouter } from './server/routes/users';
-import { solanaRouter } from './server/routes/solana';
 import { adminRouter } from './server/routes/admin';
 import { generalRouter } from './server/routes/general';
 import { mintBotRouter } from './server/mintbot/router';
@@ -15,13 +14,15 @@ import { uploadRouter } from './server/routes/upload';
 import { likesRouter } from './server/routes/likes';
 import { postsRouter } from './server/routes/posts';
 import { communitiesRouter } from './server/routes/communities';
+import { waitlistAndBetaRouter } from './server/routes/waitlistAndBeta';
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // JSON Body Parser with ample limit for metadata/images
+  // JSON & URL-encoded Body Parsers
   app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // Handle JSON parse errors gracefully
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -39,17 +40,18 @@ async function startServer() {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  app.use('/api/auth', authRouter);
+  // Direct OAuth callback aliases for top-level /auth/callback per standard OAuth conventions
+  app.use(['/auth', '/api/auth'], authRouter);
   app.use('/api', nftsRouter);
   app.use('/api/auctions', auctionsRouter);
   app.use('/api/bounties', bountiesRouter);
   app.use('/api/users', usersRouter);
-  app.use('/api/solana', solanaRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/mintbot', mintBotRouter);
   app.use('/api/likes', likesRouter);
   app.use('/api/communities', communitiesRouter);
   app.use('/api', postsRouter);
+  app.use('/api', waitlistAndBetaRouter);
   app.use('/api', uploadRouter);
   app.use('/api', generalRouter);
 
@@ -73,7 +75,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`MINT Solana NFT Protocol server running on http://0.0.0.0:${PORT}`);
+    console.log(`MINT Algorand NFT Protocol server running on http://0.0.0.0:${PORT}`);
   });
 }
 
