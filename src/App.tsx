@@ -7,6 +7,7 @@ import { AuthModal } from './components/AuthModal';
 import { SearchModal } from './components/SearchModal';
 import { NotificationsDrawer } from './components/NotificationsDrawer';
 import { TransactionModal } from './components/TransactionModal';
+import { WaitlistModal } from './components/WaitlistModal';
 
 // Views
 import { HomeView } from './views/HomeView';
@@ -40,6 +41,7 @@ const AppContent: React.FC = () => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showNotificationsDrawer, setShowNotificationsDrawer] = useState(false);
   const [showMintBotDrawer, setShowMintBotDrawer] = useState(false);
+  const [showWaitlistModal, setShowWaitlistModal] = useState(false);
   const [mintBotInitialQuery, setMintBotInitialQuery] = useState<string>('');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -190,6 +192,7 @@ const AppContent: React.FC = () => {
         onNavigate={handleNavigate}
         onOpenSearch={() => setShowSearchModal(true)}
         onOpenNotifications={() => setShowNotificationsDrawer(true)}
+        onOpenWaitlist={() => setShowWaitlistModal(true)}
         unreadNotifications={unreadCount}
       />
 
@@ -208,6 +211,7 @@ const AppContent: React.FC = () => {
             }}
             onQuickBuy={handleQuickBuy}
             onQuickBid={handleQuickBid}
+            onOpenWaitlist={() => setShowWaitlistModal(true)}
           />
         )}
 
@@ -331,6 +335,12 @@ const AppContent: React.FC = () => {
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
+        onOpenWaitlist={() => setShowWaitlistModal(true)}
+      />
+
+      <WaitlistModal
+        isOpen={showWaitlistModal}
+        onClose={() => setShowWaitlistModal(false)}
       />
 
       <SearchModal

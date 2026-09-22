@@ -1,6 +1,6 @@
 {
-  "name": "MINT — Algorand NFT Marketplace",
-  "description": "Production-grade, mobile-first Web3 NFT platform on Algorand featuring instant discovery, collection launches, verified creators, live auctions, bounties, and portfolio management.",
+  "name": "MINT — Algorand Coin Launchpad & Social Trading",
+  "description": "Production-grade, mobile-first Web3 coin launchpad and social trading platform on Algorand featuring instant token creation, bonding curves, community feeds, and DEX graduation.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -144,7 +144,7 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-[#8e97a8]">
-                  Grounded NFT analytics, verified order books, and real-time Algorand Testnet node state
+                  Grounded Memecoin analytics, bonding curve progress, market cap tracking, and real-time Algorand Testnet node state
                 </p>
               </div>
             </div>
@@ -200,7 +200,7 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ask about NFTs, collection floor prices, wallet balances, active auctions, or protocol fees..."
+              placeholder="Ask about Algorand coins, bonding curve progress, creator reserves, top holders, or platform fees..."
               className="w-full pl-11 pr-28 py-3 rounded-xl bg-[#080a0f] border border-[#212634] focus:border-[#ff5500] focus:ring-1 focus:ring-[#ff5500] text-sm text-white placeholder-[#525a6b] font-medium transition-all"
             />
             <div className="absolute right-2 flex items-center gap-2">
@@ -229,21 +229,21 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-3 text-xs">
           {[
             { id: 'all', label: 'All Research' },
-            { id: 'collections', label: 'Collections & Floors' },
-            { id: 'nfts', label: 'NFT Specs' },
+            { id: 'collections', label: 'Bonding Curves & Market Cap' },
+            { id: 'nfts', label: 'Algorand ASA Tokens' },
             { id: 'wallets', label: 'Algorand Wallets' },
-            { id: 'auctions', label: 'Auctions' },
+            { id: 'auctions', label: 'DEX Graduation' },
             { id: 'fees', label: 'Platform Fees' }
           ].map(cat => (
             <button
               key={cat.id}
               onClick={() => {
                 setActiveCategory(cat.id);
-                if (cat.id === 'collections') setQuery('Analyze Ents of Algorand collection floor and stats');
-                if (cat.id === 'nfts') setQuery('Look up Elder Ent #001 metadata and traits');
+                if (cat.id === 'collections') setQuery('Analyze top bonding curve coins near DEX graduation');
+                if (cat.id === 'nfts') setQuery('Look up token specs and distribution for $MINT');
                 if (cat.id === 'wallets') setQuery('Check balance for ACEALGORANDTESTNETVALIDATORCREATOR7XQP9KLM1VOS3W2YRT7UABCD');
-                if (cat.id === 'auctions') setQuery('Find active auctions on MINT');
-                if (cat.id === 'fees') setQuery('What are the protocol fees and creator royalties?');
+                if (cat.id === 'auctions') setQuery('Find coins ready for Tinyman DEX graduation on Algorand');
+                if (cat.id === 'fees') setQuery('What are the protocol fees and creator royalties for token launches?');
               }}
               className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap text-[11px] ${
                 activeCategory === cat.id
@@ -464,7 +464,7 @@ export const MintBotView: React.FC<MintBotViewProps> = ({
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[#6b7280] italic">No transaction signatures confirmed for this address on Devnet yet.</p>
+                    <p className="text-[#6b7280] italic">No transaction signatures confirmed for this address on Testnet yet.</p>
                   )}
                 </div>
               </div>

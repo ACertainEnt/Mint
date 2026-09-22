@@ -1,12 +1,12 @@
 /**
  * MINT Protocol Application URL Configuration
  *
- * Production default: https://mintverse.vercel.app
+ * Production default: https://mint-pad.vercel.app
  * Dynamically resolves to window.location.origin in browser environments
  * while falling back to the configured production URL for SSR or static links.
  */
 
-export const PRODUCTION_APP_URL = 'https://mintverse.vercel.app';
+export const PRODUCTION_APP_URL = 'https://mint-pad.vercel.app';
 
 export function getPublicAppUrl(): string {
   // 1. Environment variable if explicitly specified

@@ -608,7 +608,7 @@ export interface PlatformConfig {
   auctionFeePercent: number;     // 2.0%
   mintFeePercent: number;        // 1.0%
   treasuryAddress: string;
-  network: 'testnet' | 'mainnet' | 'devnet' | 'mainnet-beta';
+  network: 'testnet' | 'mainnet';
   rpcEndpoint: string;
   communityCreationCooldownHours?: number; // default 10 hours for normal users
   mintBotConfig?: MintBotConfig;

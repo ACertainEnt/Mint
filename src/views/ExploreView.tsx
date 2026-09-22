@@ -65,14 +65,14 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-white">
-            Explore Algorand Marketplace
+            Algorand Coins & Bonding Curves
           </h1>
           <p className="text-xs sm:text-sm text-[#9ca3af] mt-1">
-            Discover artifacts, verify on-chain metadata, and trade with sub-second finality.
+            Discover trending memecoins, track bonding curve progress toward Tinyman DEX graduation, and trade with instant Algorand finality.
           </p>
         </div>
         <div className="text-xs font-mono-code text-[#6b7280]">
-          Showing <span className="text-white font-bold">{filteredNfts.length}</span> items
+          Showing <span className="text-white font-bold">{filteredNfts.length}</span> coins
         </div>
       </div>
 
@@ -86,7 +86,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Filter by NFT name, traits, or description..."
+              placeholder="Filter coins by ticker, name, or creator..."
               className="w-full bg-[#161a22] border border-[#232938] rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder-[#525a6c] focus:outline-none focus:border-[#ff5500]"
             />
           </div>
@@ -99,7 +99,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
                 statusFilter === 'all' ? 'bg-[#ff5500] text-white' : 'text-[#8e97a8] hover:text-white'
               }`}
             >
-              All
+              All Coins
             </button>
             <button
               onClick={() => setStatusFilter('listed')}
@@ -108,7 +108,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
               }`}
             >
               <Tag size={12} />
-              <span>Buy Now</span>
+              <span>Bonding Curve</span>
             </button>
             <button
               onClick={() => setStatusFilter('auction')}
@@ -116,8 +116,8 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
                 statusFilter === 'auction' ? 'bg-[#ff5500] text-white' : 'text-[#8e97a8] hover:text-white'
               }`}
             >
-              <Gavel size={12} />
-              <span>Auction</span>
+              <Sparkles size={12} />
+              <span>DEX Graduated</span>
             </button>
           </div>
 
@@ -129,10 +129,10 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
               onChange={e => setSortBy(e.target.value as any)}
               className="bg-[#161a22] border border-[#232938] rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-[#ff5500]"
             >
-              <option value="newest">Recently Minted</option>
-              <option value="price_asc">Price: Low to High</option>
-              <option value="price_desc">Price: High to Low</option>
-              <option value="likes">Most Popular</option>
+              <option value="newest">Newest Launches</option>
+              <option value="price_asc">Market Cap: Low to High</option>
+              <option value="price_desc">Market Cap: High to Low</option>
+              <option value="likes">Highest Volume / Likes</option>
             </select>
           </div>
         </div>
@@ -149,7 +149,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
                   : 'bg-[#181d28] text-[#8e97a8] hover:text-white'
               }`}
             >
-              All Collections
+              All Categories
             </button>
             {collections.map(col => (
               <button
@@ -167,9 +167,9 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
             ))}
           </div>
 
-          {/* Min / Max SOL range */}
+          {/* Min / Max ALGO range */}
           <div className="flex items-center gap-1.5 text-xs font-mono-code">
-            <span className="text-[#6b7280]">SOL Range:</span>
+            <span className="text-[#6b7280]">ALGO Range:</span>
             <input
               type="number"
               value={minPrice}

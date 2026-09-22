@@ -7,9 +7,10 @@ import { api } from '../lib/api';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenWaitlist?: () => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onOpenWaitlist }) => {
   const { loginWithEmail, registerWithEmail, loginWithProvider } = useAuth();
   const { connect } = useWallet();
 
@@ -426,9 +427,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </div>
         )}
 
-        <div className="mt-5 text-center flex items-center justify-center gap-1.5 text-[11px] text-[#6b7280]">
-          <Shield size={12} className="text-[#ff5500]" />
-          <span>Non-custodial. We never request or store private keys.</span>
+        <div className="mt-5 text-center flex flex-col items-center justify-center gap-2 text-[11px] text-[#6b7280]">
+          <div className="flex items-center gap-1.5">
+            <Shield size={12} className="text-[#ff5500]" />
+            <span>Non-custodial. We never request or store private keys.</span>
+          </div>
+          {onOpenWaitlist && (
+            <div className="mt-1 pt-2 border-t border-[#1e2330] w-full text-center">
+              <span className="text-[#8e97a8]">Looking for early access? </span>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenWaitlist();
+                }}
+                className="font-semibold text-[#ff8c4d] hover:text-[#ff5500] underline transition-colors cursor-pointer"
+              >
+                Join the MINT Waitlist →
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

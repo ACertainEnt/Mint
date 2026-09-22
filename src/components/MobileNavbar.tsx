@@ -38,7 +38,7 @@ export const MobileNavbar: React.FC<MobileNavbarProps> = ({ currentTab, onNaviga
           >
             <Compass size={18} className={isExploreActive ? 'text-[#ff5500]' : 'text-[#8e97a8]'} />
             <span className={`text-[10px] mt-1 ${isExploreActive ? 'font-bold' : 'font-medium'}`}>
-              Explore
+              Coins
             </span>
           </button>
         </div>

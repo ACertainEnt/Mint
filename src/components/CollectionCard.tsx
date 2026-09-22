@@ -36,7 +36,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onSe
         {collection.isLive && !isSoldOut && (
           <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono-code font-bold backdrop-blur-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-            <span>MINTING</span>
+            <span>ACTIVE</span>
           </div>
         )}
       </div>
@@ -71,7 +71,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onSe
         <div className="mt-3">
           <div className="flex justify-between text-[10px] font-mono-code mb-1">
             <span className="text-[#6b7280]">
-              MINTED: {collection.mintedSupply} / {collection.totalSupply}
+              BONDING: {collection.mintedSupply} / {collection.totalSupply}
             </span>
             <span className="text-[#ff5500] font-semibold">{percentMinted}%</span>
           </div>
@@ -87,15 +87,15 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onSe
         <div className="mt-3 pt-2.5 border-t border-[#1b202b] flex items-center justify-between">
           <div className="flex gap-3 text-left">
             <div>
-              <div className="text-[9px] font-mono-code text-[#6b7280]">MINT PRICE</div>
+              <div className="text-[9px] font-mono-code text-[#6b7280]">PRICE</div>
               <div className="text-xs font-mono-code font-bold text-[#ff5500]">
-                {collection.mintPrice} SOL
+                {collection.mintPrice} ALGO
               </div>
             </div>
             <div>
               <div className="text-[9px] font-mono-code text-[#6b7280]">VOLUME</div>
               <div className="text-xs font-mono-code font-bold text-white">
-                {collection.totalVolume || 0} SOL
+                {collection.totalVolume || 0} ALGO
               </div>
             </div>
           </div>

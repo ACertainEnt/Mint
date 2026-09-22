@@ -250,12 +250,12 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({
           </div>
         </div>
 
-        {/* Right: Live Minting Box */}
+        {/* Right: Live Bonding Curve Box */}
         <div className="lg:col-span-4 p-5 rounded-2xl bg-[#11141b] border border-[#232837] space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-mono-code font-bold uppercase text-white flex items-center gap-1.5">
               <Sparkles size={14} className="text-[#ff5500]" />
-              {isSoldOut ? 'Mint Concluded' : 'Live Primary Mint'}
+              {isSoldOut ? 'DEX Graduated' : 'Bonding Curve Progress'}
             </span>
             <span className="text-xs font-mono-code text-[#ff5500] font-bold">{percentMinted}%</span>
           </div>
@@ -267,22 +267,22 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({
           {!isSoldOut && (
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-[#8e97a8]">Price per item:</span>
+                <span className="text-[#8e97a8]">Initial Token Price:</span>
                 <span className="font-mono-code font-bold text-white">{collection.mintPrice} ALGO</span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-[#8e97a8]">Wallet limit:</span>
-                <span className="font-mono-code text-white">{collection.walletMintLimit || 3} items</span>
+                <span className="text-[#8e97a8]">Wallet Max Limit:</span>
+                <span className="font-mono-code text-white">{collection.walletMintLimit || 1000} tokens</span>
               </div>
 
               <button
                 onClick={handleMint}
                 disabled={minting}
-                className="w-full py-3 rounded-xl bg-[#ff5500] hover:bg-[#e64d00] disabled:opacity-50 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-[#ff5500]/25 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-[#ff5500] hover:bg-[#e64d00] disabled:opacity-50 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-[#ff5500]/25 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Sparkles size={15} />
-                <span>{minting ? 'Minting On Algorand...' : `Mint 1 NFT for ${collection.mintPrice} ALGO`}</span>
+                <span>{minting ? 'Executing Swaps On Algorand...' : `Buy Tokens for ${collection.mintPrice} ALGO`}</span>
               </button>
             </div>
           )}
@@ -295,24 +295,24 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({
           <div className="flex items-center gap-3">
             <img src={mintSuccess.image} alt={mintSuccess.name} className="w-12 h-12 rounded-lg object-cover" />
             <div>
-              <div className="text-xs font-bold text-emerald-400">Successfully Minted!</div>
+              <div className="text-xs font-bold text-emerald-400">Order Confirmed!</div>
               <div className="text-sm font-bold text-white">{mintSuccess.name}</div>
             </div>
           </div>
           <button
             onClick={() => onSelectNft(mintSuccess)}
-            className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold"
+            className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold cursor-pointer"
           >
-            View NFT
+            View Token Details
           </button>
         </div>
       )}
 
-      {/* NFTs in this collection */}
+      {/* Tokens in this pool */}
       <div className="space-y-4 pt-4 border-t border-[#1b202c]">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-display font-bold text-white">
-            Collection Artifacts ({nfts.length})
+            Token Pool & Holdings ({nfts.length})
           </h2>
         </div>
 

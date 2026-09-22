@@ -34,7 +34,7 @@ export const LaunchSecurityNotice: React.FC<LaunchSecurityNoticeProps> = ({
           </span>
         </div>
         <span className="text-[10px] text-[#8e97a8] font-mono-code px-2 py-0.5 rounded bg-[#161a24] border border-[#262c3d]">
-          Devnet Guards Active
+          Testnet Guards Active
         </span>
       </div>
 

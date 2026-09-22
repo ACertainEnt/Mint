@@ -56,16 +56,16 @@ export const NFTCard: React.FC<NFTCardProps> = ({ nft, onSelect, onQuickBuy, onQ
         <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
           {/* Status badge */}
           {nft.isInAuction ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono-code font-bold bg-amber-500/90 text-black shadow flex items-center gap-1 backdrop-blur-sm">
-              <Gavel size={10} /> AUCTION
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono-code font-bold bg-emerald-500/90 text-black shadow flex items-center gap-1 backdrop-blur-sm">
+              <Zap size={10} /> GRADUATED
             </span>
           ) : nft.isListed ? (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-mono-code font-bold bg-[#ff5500] text-white shadow flex items-center gap-1 backdrop-blur-sm">
-              <Tag size={10} /> LISTED
+              <Tag size={10} /> BONDING CURVE
             </span>
           ) : (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-mono-code font-medium bg-black/60 text-[#8e97a8] backdrop-blur-sm">
-              UNLISTED
+              NEW LAUNCH
             </span>
           )}
 
@@ -108,15 +108,15 @@ export const NFTCard: React.FC<NFTCardProps> = ({ nft, onSelect, onQuickBuy, onQ
         <div className="mt-2.5 pt-2 border-t border-[#1b202b] flex items-center justify-between">
           <div>
             <div className="text-[10px] font-mono-code text-[#6b7280]">
-              {nft.isInAuction ? 'CURRENT BID' : nft.isListed ? 'PRICE' : 'LAST SALE'}
+              {nft.isInAuction ? 'MARKET CAP' : nft.isListed ? 'PRICE' : 'INITIAL'}
             </div>
             <div className="text-xs sm:text-sm font-mono-code font-bold text-white flex items-baseline gap-1">
               {nft.isInAuction ? (
-                <span className="text-amber-400">{nft.price || 1.0} SOL</span>
+                <span className="text-emerald-400">{nft.price || 1.0} ALGO</span>
               ) : nft.isListed ? (
-                <span className="text-[#ff5500]">{nft.price} SOL</span>
+                <span className="text-[#ff5500]">{nft.price} ALGO</span>
               ) : nft.lastSalePrice ? (
-                <span className="text-[#9ca3af]">{nft.lastSalePrice} SOL</span>
+                <span className="text-[#9ca3af]">{nft.lastSalePrice} ALGO</span>
               ) : (
                 <span className="text-[#525a6c]">--</span>
               )}

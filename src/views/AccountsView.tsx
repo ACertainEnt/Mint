@@ -388,7 +388,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
           {[
             { id: 'owned', label: `Owned (${portfolioData.ownedNfts.length})` },
             { id: 'listed', label: `Active Listings (${portfolioData.listedNfts.length})` },
-            { id: 'collections', label: `My Collections (${portfolioData.createdCollections.length})` },
+            { id: 'collections', label: `My Coins (${portfolioData.createdCollections.length})` },
             { id: 'bids', label: `Active Bids & Won (${portfolioData.activeBids.length + portfolioData.wonAuctions.length})` },
             { id: 'bounties', label: `Bounties (${portfolioData.createdBounties.length + portfolioData.submittedBounties.length})` },
             { id: 'history', label: 'Activity Feed' }

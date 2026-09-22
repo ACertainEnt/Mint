@@ -14,6 +14,7 @@ interface HomeViewProps {
   onSelectCollection?: (col: any) => void;
   onQuickBuy: (nft: NFT) => void;
   onQuickBid: (nft: NFT) => void;
+  onOpenWaitlist?: () => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -21,7 +22,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onSelectNft,
   onSelectCollection,
   onQuickBuy,
-  onQuickBid
+  onQuickBid,
+  onOpenWaitlist
 }) => {
   const { user, setShowAuthModal } = useAuth();
   const { connected } = useWallet();
@@ -134,6 +136,27 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6 text-left">
+      {/* Early Access Waitlist Banner for Visitors */}
+      {!user && onOpenWaitlist && (
+        <div className="bg-gradient-to-r from-[#141822] via-[#1a1f2e] to-[#141822] border border-[#ff5500]/30 rounded-xl p-4 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#ff5500]/20 border border-[#ff5500]/40 flex items-center justify-center text-[#ff5500] shrink-0">
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Join the MINT Early Access Waitlist</h3>
+              <p className="text-xs text-[#8e97a8] mt-0.5">Secure your position for VIP NFT drops, launchpad allocations, and creator rewards.</p>
+            </div>
+          </div>
+          <button
+            onClick={onOpenWaitlist}
+            className="px-4 py-2 rounded-lg bg-[#ff5500] hover:bg-[#e64d00] text-white text-xs font-bold transition-all shadow-md shadow-[#ff5500]/20 shrink-0 cursor-pointer"
+          >
+            Join Waitlist
+          </button>
+        </div>
+      )}
+
       {/* 1. Feed Navigation Tabs - Clean, text-only top bar with underline accent */}
       <div className="border-b border-[#212634] flex items-center justify-between gap-2">
         <div className="flex items-center gap-4 sm:gap-8 -mb-px">

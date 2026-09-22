@@ -45,7 +45,7 @@ type LaunchButtonState =
 
 export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onNavigate }) => {
   const { user, setShowAuthModal } = useAuth();
-  const { connected, publicKey, balance, connect, sendSolTransaction, requestAirdrop, refreshBalance } = useWallet();
+  const { connected, publicKey, balance, connect, sendTransaction, requestAirdrop, refreshBalance } = useWallet();
 
   // Step Management (1: Details, 2: Config, 3: Fees, 4: Review)
   const [currentStep, setCurrentStep] = useState<LaunchStep>(1);
@@ -217,7 +217,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
       await requestAirdrop();
       await refreshBalance();
     } catch (err: any) {
-      setLaunchError(err.message || 'Failed to request Devnet airdrop. Please retry in a moment.');
+      setLaunchError(err.message || 'Failed to request Testnet airdrop. Please retry in a moment.');
     } finally {
       setIsAirdropping(false);
     }
@@ -270,7 +270,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
       setLaunchButtonState('processing');
 
       // Execute on-chain deployment fee transfer on Algorand Testnet
-      const txResult = await sendSolTransaction(
+      const txResult = await sendTransaction(
         treasury,
         creationFee,
         `Deploy Collection: ${name.trim()} (${symbol.trim().toUpperCase()})`
@@ -323,14 +323,14 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-display font-extrabold text-white">
-              Launch NFT Collection
+              Launch Algorand Memecoin
             </h1>
             <span className="px-2 py-0.5 rounded bg-[#ff5500]/15 border border-[#ff5500]/30 text-[#ff8c4d] text-[10px] font-mono-code font-bold uppercase">
               Algorand Testnet
             </span>
           </div>
           <p className="text-xs sm:text-sm text-[#8e97a8] mt-1">
-            Deploy an authentic verified NFT collection with ASA parameters and transparent fees.
+            Create your token ticker, bonding curve parameters, initial liquidity pool, and social channels on Algorand.
           </p>
         </div>
 
@@ -567,7 +567,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
                       <HardDrive size={12} className="text-[#ff5500]" />
                       Active Protocol Storage Tier:
                     </span>
-                    <span className="font-mono-code text-[#ff8c4d]">MINT Local Node (Devnet)</span>
+                    <span className="font-mono-code text-[#ff8c4d]">MINT Local Node (Testnet)</span>
                   </div>
                   <p className="leading-relaxed">
                     Uploaded media files are verified and served directly through the local protocol node storage cluster. Decentralized permanent storage (Arweave / IPFS gateway) can be activated through environment provider keys.
@@ -1275,7 +1275,7 @@ export const LaunchView: React.FC<LaunchViewProps> = ({ onCollectionCreated, onN
           <div className="p-4 rounded-xl bg-[#11141b] border border-[#212634] space-y-2.5 text-xs text-[#8e97a8]">
             <div className="flex items-center gap-2 text-white font-bold">
               <Shield size={14} className="text-[#ff5500]" />
-              <span>Devnet Protocol Guarantees</span>
+              <span>Testnet Protocol Guarantees</span>
             </div>
             <ul className="space-y-1.5 text-[11px] leading-relaxed">
               <li className="flex items-start gap-1.5">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Bell, Wallet, User as UserIcon, LogOut, Shield, ChevronDown, Check, Coins, ExternalLink, Bot } from 'lucide-react';
+import { Search, Bell, Wallet, User as UserIcon, LogOut, Shield, ChevronDown, Check, Coins, ExternalLink, Bot, Sparkles } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import { VerifiedBadge } from './VerifiedBadge';
 import { ProviderBadge } from './ProviderBadge';
@@ -12,6 +12,7 @@ interface HeaderProps {
   onNavigate: (tab: string) => void;
   onOpenSearch: () => void;
   onOpenNotifications: () => void;
+  onOpenWaitlist?: () => void;
   unreadNotifications: number;
 }
 
@@ -20,6 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigate,
   onOpenSearch,
   onOpenNotifications,
+  onOpenWaitlist,
   unreadNotifications
 }) => {
   const { user, isAdmin, isVerified, setShowAuthModal, logout } = useAuth();
@@ -31,10 +33,10 @@ export const Header: React.FC<HeaderProps> = ({
 
   const navItems = [
     { id: 'home', label: 'Home' },
-    { id: 'explore', label: 'Explore' },
-    { id: 'launch', label: 'Launch' },
+    { id: 'explore', label: 'Coins' },
+    { id: 'launch', label: 'Launch Coin' },
     { id: 'communities', label: 'Communities' },
-    { id: 'accounts', label: 'Accounts' },
+    { id: 'accounts', label: 'Portfolio' },
     ...(isAdmin ? [{ id: 'admin', label: 'Admin' }] : [])
   ];
 
@@ -113,6 +115,18 @@ export const Header: React.FC<HeaderProps> = ({
               /
             </kbd>
           </button>
+
+          {/* Early Access Waitlist Trigger */}
+          {onOpenWaitlist && (
+            <button
+              onClick={onOpenWaitlist}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#ff5500]/15 hover:bg-[#ff5500]/25 border border-[#ff5500]/40 text-[#ff8c4d] hover:text-white text-xs font-semibold transition-all cursor-pointer shadow-sm"
+              title="Join Early Access Waitlist"
+            >
+              <Sparkles size={13} className="text-[#ff5500]" />
+              <span className="hidden sm:inline text-[11px]">Waitlist</span>
+            </button>
+          )}
 
           {/* Notifications */}
           <button
